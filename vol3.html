@@ -295,4 +295,168 @@
         { en: "include", ja: "～を含む" },
         { en: "remain", ja: "～のままでいる" },
         { en: "reach", ja: "～に着く、～に達する" },
-        { en: "allow", ja: "～
+        { en: "allow", ja: "～を許可する" },
+        { en: "force", ja: "～を強制する" },
+        { en: "offer", ja: "～を申し出る" },
+        { en: "realize", ja: "～を悟る、実現する" },
+        { en: "suggest", ja: "～を提案する、ほのめかす" },
+        { en: "require", ja: "～を必要とする" },
+        { en: "worry", ja: "心配する" },
+        { en: "wonder", ja: "～かと疑問に思う" },
+        { en: "cost", ja: "～を要する、費用がかかる" },
+        { en: "tend", ja: "～する傾向がある" },
+        { en: "depend", ja: "～に依存する、～しだいだ" },
+        { en: "share", ja: "～を分け合う、共有する" },
+        { en: "demand", ja: "～を要求する" },
+        { en: "support", ja: "～を支持する、養う" }
+    ];
+
+    // 状態管理変数
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let isAnswering = false;
+    let questionLimit = 10;
+
+    // DOM要素
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const resultScreen = document.getElementById('result-screen');
+    
+    const questionWordEl = document.getElementById('question-word');
+    const optionsContainer = document.getElementById('options-container');
+    const progressText = document.getElementById('progress-text');
+    const progressFill = document.getElementById('progress-fill');
+    const finalScoreEl = document.getElementById('final-score');
+    const scoreMessageEl = document.getElementById('score-message');
+    const totalWordsCountEl = document.getElementById('total-words-count');
+    const questionCountInput = document.getElementById('question-count-input');
+
+    // 初期設定
+    window.onload = function() {
+        totalWordsCountEl.textContent = wordList.length;
+        questionCountInput.max = wordList.length;
+        questionCountInput.value = Math.min(10, wordList.length);
+    };
+
+    // 配列シャッフル
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // テスト開始
+    function startGame() {
+        let val = parseInt(questionCountInput.value);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > wordList.length) val = wordList.length;
+        
+        questionLimit = val;
+
+        startScreen.classList.add('hidden');
+        resultScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+
+        initGameLogic();
+    }
+
+    // ゲームロジック初期化
+    function initGameLogic() {
+        const shuffledAll = shuffle([...wordList]);
+        currentQuestions = shuffledAll.slice(0, questionLimit);
+        
+        currentIndex = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    // 設定画面に戻る（リスタート）
+    function backToStart() {
+        resultScreen.classList.add('hidden');
+        gameScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    }
+
+    // 問題表示
+    function showQuestion() {
+        isAnswering = true;
+        const currentData = currentQuestions[currentIndex];
+
+        questionWordEl.textContent = currentData.en;
+        progressText.textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+        progressFill.style.width = `${((currentIndex) / currentQuestions.length) * 100}%`;
+
+        generateOptions(currentData);
+    }
+
+    // 選択肢生成
+    function generateOptions(correctData) {
+        optionsContainer.innerHTML = '';
+        const otherWords = wordList.filter(w => w.en !== correctData.en);
+        const distractors = shuffle(otherWords).slice(0, 3);
+        const options = shuffle([correctData, ...distractors]);
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt.ja;
+            btn.onclick = () => checkAnswer(opt, correctData, btn, options);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // 答え合わせ
+    function checkAnswer(selected, correct, selectedBtn, currentOptions) {
+        if (!isAnswering) return;
+        isAnswering = false;
+
+        const allBtns = optionsContainer.querySelectorAll('.option-btn');
+
+        if (selected.en === correct.en) {
+            selectedBtn.classList.add('correct');
+            score++;
+        } else {
+            selectedBtn.classList.add('wrong');
+            allBtns.forEach(btn => {
+                if (btn.textContent === correct.ja) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+
+        allBtns.forEach(btn => btn.classList.add('disabled'));
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1200);
+    }
+
+    // 結果表示
+    function showResult() {
+        gameScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        resultScreen.style.display = 'flex';
+        
+        const percentage = Math.round((score / currentQuestions.length) * 100);
+        finalScoreEl.textContent = `${percentage}点`;
+        progressFill.style.width = '100%';
+
+        if (percentage === 100) {
+            scoreMessageEl.textContent = "完璧です！素晴らしい！💯";
+        } else if (percentage >= 80) {
+            scoreMessageEl.textContent = "合格ライン突破！その調子です。";
+        } else {
+            scoreMessageEl.textContent = "復習してもう一度頑張りましょう！";
+        }
+    }
+</script>
+</body>
+</html>
