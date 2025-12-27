@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シスタン単語テスト（問題数選択可）</title>
+    <style>
+        :root {
+            --primary: #0056b3; /* シスタンっぽい青 */
+            --secondary: #f0f2f5;
+            --correct: #28a745;
+            --wrong: #dc3545;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--secondary);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            /* 画面切り替え時に高さがガクつくのを防ぐため最小高さを設定 */
+            min-height: 400px; 
+        }
+
+        /* 共通ボタン */
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #004494;
+        }
+
+        /* --- スタート画面 --- */
+        .start-screen {
+            padding: 40px;
+            text-align: center;
+            display: flex; /* 初期は表示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .setting-area {
+            margin: 30px 0;
+            background: #f8fbff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dae1e7;
+            width: 80%;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+
+        /* --- ゲーム画面 (ヘッダー) --- */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* --- 質問エリア --- */
+        .question-area {
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .english-word {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* --- 選択肢エリア --- */
+        .options-area {
+            padding: 20px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            color: #444;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: #f8fbff;
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct);
+            color: white;
+            border-color: var(--correct);
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong);
+            color: white;
+            border-color: var(--wrong);
+            opacity: 0.6;
+        }
+
+        .option-btn.disabled {
+            pointer-events: none;
+        }
+
+        /* --- 結果画面 --- */
+        .result-screen {
+            display: none;
+            padding: 40px;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+
+        /* プログレスバー */
+        .progress-bar {
+            height: 6px;
+            background-color: #eee;
+            width: 100%;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 画面切り替え用ユーティリティ */
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div id="start-screen" class="start-screen">
+            <h2>単語テスト設定</h2>
+            <p>収録単語数: <span id="total-words-count" style="font-weight:bold;">0</span> 語</p>
+            
+            <div class="setting-area">
+                <label for="question-count-input">出題数を選択</label>
+                <div class="input-group">
+                    <input type="number" id="question-count-input" value="10" min="1" max="100">
+                    <span>問</span>
+                </div>
+                <small style="color:#666; display:block; margin-top:5px;">(10〜最大数まで)</small>
+            </div>
+
+            <button class="btn-primary" onclick="startGame()">テスト開始</button>
+        </div>
+        <div id="game-screen" class="hidden">
+            <header>
+                <span>SysTan Challenge</span>
+                <span class="progress-text" id="progress-text">1 / 10</span>
+            </header>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div class="question-area">
+                <div class="english-word" id="question-word">Loading...</div>
+                <div class="instruction">意味を選んでください</div>
+            </div>
+
+            <div class="options-area" id="options-container">
+                </div>
+        </div>
+
+        <div id="result-screen" class="result-screen hidden">
+            <h2>テスト終了</h2>
+            <div class="score-display" id="final-score">0点</div>
+            <p id="score-message">よく頑張りました！</p>
+            <button class="btn-primary" onclick="backToStart()">トップに戻る</button>
+        </div>
+    </div>
+
+<script>
+    // ==========================================
+    //  単語リスト
+    // ==========================================
+    const wordList = [
+        { en: "follow", ja: "～に従う、(後に)続く" },
+        { en: "consider", ja: "～を考慮する" },
+        { en: "increase", ja: "増える、～を増やす" },
+        { en: "expect", ja: "～を予期する" },
+        { en: "decide", ja: "～を決意する" },
+        { en: "develop", ja: "発達する、～を開発する" },
+        { en: "provide", ja: "～を供給する、与える" },
+        { en: "continue", ja: "続く、～を続ける" },
+        { en: "include", ja: "～を含む" },
+        { en: "remain", ja: "～のままでいる" },
+        { en: "reach", ja: "～に着く、～に達する" },
+        { en: "allow", ja: "～を許可する" },
+        { en: "force", ja: "～を強制する" },
+        { en: "offer", ja: "～を申し出る" },
+        { en: "realize", ja: "～を悟る、実現する" },
+        { en: "suggest", ja: "～を提案する、ほのめかす" },
+        { en: "require", ja: "～を必要とする" },
+        { en: "worry", ja: "心配する" },
+        { en: "wonder", ja: "～かと疑問に思う" },
+        { en: "cost", ja: "～を要する、費用がかかる" },
+        { en: "tend", ja: "～する傾向がある" },
+        { en: "depend", ja: "～に依存する、～しだいだ" },
+        { en: "share", ja: "～を分け合う、共有する" },
+        { en: "demand", ja: "～を要求する" },
+        { en: "support", ja: "～を支持する、養う" }
+    ];
+
+    // 状態管理変数
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let isAnswering = false;
+    let questionLimit = 10; // デフォルト値
+
+    // DOM要素
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const resultScreen = document.getElementById('result-screen');
+    
+    const questionWordEl = document.getElementById('question-word');
+    const optionsContainer = document.getElementById('options-container');
+    const progressText = document.getElementById('progress-text');
+    const progressFill = document.getElementById('progress-fill');
+    const finalScoreEl = document.getElementById('final-score');
+    const scoreMessageEl = document.getElementById('score-message');
+    const totalWordsCountEl = document.getElementById('total-words-count');
+    const questionCountInput = document.getElementById('question-count-input');
+
+    // 初期設定（起動時）
+    window.onload = function() {
+        // 収録単語数を表示
+        totalWordsCountEl.textContent = wordList.length;
+        // 入力欄の最大値を単語数に合わせる
+        questionCountInput.max = wordList.length;
+        // 入力欄の初期値（単語数が10未満ならその数、それ以外は10）
+        questionCountInput.value = Math.min(10, wordList.length);
+    };
+
+    // 配列をシャッフルする関数
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // ★ テスト開始ボタンが押されたとき
+    function startGame() {
+        // 入力された値を取得
+        let val = parseInt(questionCountInput.value);
+        
+        // バリデーション（入力値チェック）
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > wordList.length) val = wordList.length;
+        
+        questionLimit = val;
+
+        // 画面切り替え
+        startScreen.classList.add('hidden');
+        resultScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+
+        // ゲーム初期化処理へ
+        initGameLogic();
+    }
+
+    // ゲームロジック初期化
+    function initGameLogic() {
+        // 全単語リストをシャッフルして、設定された出題数分だけ取得
+        const shuffledAll = shuffle([...wordList]);
+        currentQuestions = shuffledAll.slice(0, questionLimit);
+        
+        currentIndex = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    // トップに戻る
+    function backToStart() {
+        resultScreen.classList.add('hidden');
+        gameScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    }
+
+    // 問題表示
+    function showQuestion() {
+        isAnswering = true;
+        const currentData = currentQuestions[currentIndex];
+
+        // UI更新
+        questionWordEl.textContent = currentData.en;
+        progressText.textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+        progressFill.style.width = `${((currentIndex) / currentQuestions.length) * 100}%`;
+
+        // 選択肢の生成
+        generateOptions(currentData);
+    }
+
+    // 選択肢生成ロジック
+    function generateOptions(correctData) {
+        optionsContainer.innerHTML = '';
+
+        // 正解以外の単語リストを作成
+        const otherWords = wordList.filter(w => w.en !== correctData.en);
+        
+        // ダミー選択肢を3つランダムに選ぶ
+        const distractors = shuffle(otherWords).slice(0, 3);
+        
+        // 正解とダミーを合わせてシャッフル
+        const options = shuffle([correctData, ...distractors]);
+
+        // ボタンを作成して配置
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt.ja;
+            
+            btn.onclick = () => checkAnswer(opt, correctData, btn, options);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // 答え合わせ
+    function checkAnswer(selected, correct, selectedBtn, currentOptions) {
+        if (!isAnswering) return;
+        isAnswering = false;
+
+        const allBtns = optionsContainer.querySelectorAll('.option-btn');
+
+        if (selected.en === correct.en) {
+            selectedBtn.classList.add('correct');
+            score++;
+        } else {
+            selectedBtn.classList.add('wrong');
+            allBtns.forEach(btn => {
+                if (btn.textContent === correct.ja) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+
+        allBtns.forEach(btn => btn.classList.add('disabled'));
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1200);
+    }
+
+    // 結果表示
+    function showResult() {
+        gameScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        resultScreen.style.display = 'flex'; // flexに戻して中央寄せ維持
+        
+        const percentage = Math.round((score / currentQuestions.length) * 100);
+        finalScoreEl.textContent = `${percentage}点`;
+        progressFill.style.width = '100%';
+
+        if (percentage === 100) {
+            scoreMessageEl.textContent = "完璧です！素晴らしい！💯";
+        } else if (percentage >= 80) {
+            scoreMessageEl.textContent = "合格ライン突破！その調子です。";
+        } else {
+            scoreMessageEl.textContent = "復習してもう一度頑張りましょう！";
+        }
+    }
+
+</script>
+</body>
+</html>
