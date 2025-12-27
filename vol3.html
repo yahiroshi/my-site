@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シスタン単語テスト（問題数選択可）</title>
+    <style>
+        :root {
+            --primary: #0056b3; /* シスタンっぽい青 */
+            --secondary: #f0f2f5;
+            --correct: #28a745;
+            --wrong: #dc3545;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--secondary);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            position: relative; /* リンクの配置用 */
+        }
+
+        /* ▼▼▼ 追加した「メニューに戻る」リンクのスタイル ▼▼▼ */
+        .home-link {
+            display: block;
+            padding: 15px 20px 5px 20px; /* 上・左右・下の余白 */
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+            background: white; /* 背景を白にして前面に */
+            z-index: 10;
+        }
+        .home-link:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        /* ▲▲▲ ここまで ▲▲▲ */
+
+        /* 共通ボタン */
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #004494;
+        }
+
+        /* --- スタート画面 --- */
+        .start-screen {
+            padding: 20px 40px 40px; /* 上の余白を少し減らす（リンクがあるため） */
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            flex-grow: 1; /* 高さいっぱい使う */
+        }
+
+        .setting-area {
+            margin: 30px 0;
+            background: #f8fbff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dae1e7;
+            width: 80%;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+
+        /* --- ゲーム画面 (ヘッダー) --- */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* --- 質問エリア --- */
+        .question-area {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .english-word {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* --- 選択肢エリア --- */
+        .options-area {
+            padding: 20px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            color: #444;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: #f8fbff;
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct);
+            color: white;
+            border-color: var(--correct);
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong);
+            color: white;
+            border-color: var(--wrong);
+            opacity: 0.6;
+        }
+
+        .option-btn.disabled {
+            pointer-events: none;
+        }
+
+        /* --- 結果画面 --- */
+        .result-screen {
+            display: none;
+            padding: 40px;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            flex-grow: 1;
+        }
+        
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+
+        /* プログレスバー */
+        .progress-bar {
+            height: 6px;
+            background-color: #eee;
+            width: 100%;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 画面切り替え用ユーティリティ */
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <a href="index.html" class="home-link">← メニューに戻る</a>
+
+        <div id="start-screen" class="start-screen">
+            <h2>単語テスト設定</h2>
+            <p>収録単語数: <span id="total-words-count" style="font-weight:bold;">0</span> 語</p>
+            
+            <div class="setting-area">
+                <label for="question-count-input">出題数を選択</label>
+                <div class="input-group">
+                    <input type="number" id="question-count-input" value="10" min="1" max="100">
+                    <span>問</span>
+                </div>
+                <small style="color:#666; display:block; margin-top:5px;">(10〜最大数まで)</small>
+            </div>
+
+            <button class="btn-primary" onclick="startGame()">テスト開始</button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <header>
+                <span>SysTan Challenge</span>
+                <span class="progress-text" id="progress-text">1 / 10</span>
+            </header>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div class="question-area">
+                <div class="english-word" id="question-word">Loading...</div>
+                <div class="instruction">意味を選んでください</div>
+            </div>
+
+            <div class="options-area" id="options-container">
+                </div>
+        </div>
+
+        <div id="result-screen" class="result-screen hidden">
+            <h2>テスト終了</h2>
+            <div class="score-display" id="final-score">0点</div>
+            <p id="score-message">よく頑張りました！</p>
+            <button class="btn-primary" onclick="backToStart()">設定に戻る</button>
+        </div>
+    </div>
+
+<script>
+    // ==========================================
+    //  単語リスト
+    // ==========================================
+    const wordList = [
+        { en: "follow", ja: "～に従う、(後に)続く" },
+        { en: "consider", ja: "～を考慮する" },
+        { en: "increase", ja: "増える、～を増やす" },
+        { en: "expect", ja: "～を予期する" },
+        { en: "decide", ja: "～を決意する" },
+        { en: "develop", ja: "発達する、～を開発する" },
+        { en: "provide", ja: "～を供給する、与える" },
+        { en: "continue", ja: "続く、～を続ける" },
+        { en: "include", ja: "～を含む" },
+        { en: "remain", ja: "～のままでいる" },
+        { en: "reach", ja: "～に着く、～に達する" },
+        { en: "allow", ja: "～
