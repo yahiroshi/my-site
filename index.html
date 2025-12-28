@@ -17,6 +17,10 @@
             --text-color: #55423d;     /* チョコレート色 */
             --white: #ffffff;
             --shadow: rgba(255, 154, 158, 0.4);
+            --stage-basic: #ffb7b2;    /* サーモンピンク */
+            --stage-inter: #a2d2ff;    /* ベビーブルー */
+            --stage-adv: #cdb4db;      /* ラベンダー */
+            --stage-master: #ffc8dd;   /* 濃いピンク */
         }
 
         body {
@@ -44,6 +48,7 @@
             border-radius: 50px;
             box-shadow: 0 4px 10px var(--shadow);
             border: 3px solid var(--soft-pink);
+            text-align: center;
         }
 
         .subtitle {
@@ -57,22 +62,28 @@
 
         /* セクション見出し */
         h2 {
-            margin-top: 30px;
-            font-size: 1.4rem;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
             color: #fff;
-            background-color: #ffb7b2; /* サーモンピンク */
             padding: 8px 25px;
             border-radius: 20px;
             display: inline-block;
             box-shadow: 0 4px 0px rgba(0,0,0,0.1);
         }
 
+        /* ステージごとの色分け */
+        .stage-1 { background-color: var(--stage-basic); }
+        .stage-2 { background-color: var(--stage-inter); }
+        .stage-3 { background-color: var(--stage-adv); }
+        .stage-4 { background-color: var(--stage-master); }
+
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 15px;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             padding: 10px;
         }
 
@@ -81,7 +92,7 @@
             text-decoration: none;
             color: var(--text-color);
             border-radius: 20px;
-            padding: 20px 10px;
+            padding: 15px 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -98,6 +109,7 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 20px rgba(255, 154, 158, 0.4);
             border-color: var(--soft-pink);
+            z-index: 10;
         }
 
         .menu-btn:active {
@@ -106,22 +118,24 @@
         }
 
         .range {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            color: var(--accent-pink);
+            color: var(--text-color);
             margin: 5px 0;
+            opacity: 0.8;
         }
 
         .label {
             font-size: 0.8rem;
-            color: #999;
+            color: #aaa;
             background: #fdfdfd;
             padding: 2px 8px;
             border-radius: 10px;
             border: 1px solid #eee;
+            margin-bottom: 4px;
         }
 
-        /* デコレーション（ドット柄のアクセント） */
+        /* デコレーション（上部のライン） */
         .menu-btn::before {
             content: '';
             position: absolute;
@@ -129,103 +143,25 @@
             left: 0;
             width: 100%;
             height: 6px;
-            background: linear-gradient(90deg, #ff9a9e, #fad0c4);
         }
+
+        /* ステージごとのボタンアクセントカラー */
+        .s1 .menu-btn::before { background: linear-gradient(90deg, #ff9a9e, #fad0c4); }
+        .s2 .menu-btn::before { background: linear-gradient(90deg, #a2d2ff, #bde0fe); }
+        .s3 .menu-btn::before { background: linear-gradient(90deg, #cdb4db, #ffc8dd); }
+        .s4 .menu-btn::before { background: linear-gradient(90deg, #ffc8dd, #ffafcc); }
+        
+        .s1 .range { color: #ff858a; }
+        .s2 .range { color: #7cbbf5; }
+        .s3 .range { color: #b58cc9; }
+        .s4 .range { color: #ff8fab; }
 
     </style>
 </head>
 <body>
 
     <h1>English Vocabulary</h1>
-    <div class="subtitle">Let's study together! ✨</div>
+    <div class="subtitle">Total 2050 Words Challenge! ✨</div>
 
-    <h2>Stage 1 (Basic)</h2>
-    <div class="menu-grid">
-        <a href="vol1.html" class="menu-btn">
-            <span class="label">Vol.1</span>
-            <span class="range">1 - 50</span>
-        </a>
-        <a href="vol2.html" class="menu-btn">
-            <span class="label">Vol.2</span>
-            <span class="range">51 - 100</span>
-        </a>
-        <a href="vol3.html" class="menu-btn">
-            <span class="label">Vol.3</span>
-            <span class="range">101 - 150</span>
-        </a>
-        <a href="vol4.html" class="menu-btn">
-            <span class="label">Vol.4</span>
-            <span class="range">151 - 200</span>
-        </a>
-        <a href="vol5.html" class="menu-btn">
-            <span class="label">Vol.5</span>
-            <span class="range">201 - 250</span>
-        </a>
-        <a href="vol6.html" class="menu-btn">
-            <span class="label">Vol.6</span>
-            <span class="range">251 - 300</span>
-        </a>
-        <a href="vol7.html" class="menu-btn">
-            <span class="label">Vol.7</span>
-            <span class="range">301 - 350</span>
-        </a>
-        <a href="vol8.html" class="menu-btn">
-            <span class="label">Vol.8</span>
-            <span class="range">351 - 400</span>
-        </a>
-        <a href="vol9.html" class="menu-btn">
-            <span class="label">Vol.9</span>
-            <span class="range">401 - 450</span>
-        </a>
-        <a href="vol10.html" class="menu-btn">
-            <span class="label">Vol.10</span>
-            <span class="range">451 - 500</span>
-        </a>
-        <a href="vol11.html" class="menu-btn">
-            <span class="label">Vol.11</span>
-            <span class="range">501 - 550</span>
-        </a>
-        <a href="vol12.html" class="menu-btn">
-            <span class="label">Vol.12</span>
-            <span class="range">551 - 600</span>
-        </a>
-    </div>
-
-    <h2>Stage 2 (Advanced)</h2>
-    <div class="menu-grid">
-        <a href="vol13.html" class="menu-btn">
-            <span class="label">Vol.13</span>
-            <span class="range">601 - 650</span>
-        </a>
-        <a href="vol14.html" class="menu-btn">
-            <span class="label">Vol.14</span>
-            <span class="range">651 - 700</span>
-        </a>
-        <a href="vol15.html" class="menu-btn">
-            <span class="label">Vol.15</span>
-            <span class="range">701 - 750</span>
-        </a>
-        <a href="vol16.html" class="menu-btn">
-            <span class="label">Vol.16</span>
-            <span class="range">751 - 800</span>
-        </a>
-        <a href="vol17.html" class="menu-btn">
-            <span class="label">Vol.17</span>
-            <span class="range">801 - 850</span>
-        </a>
-        <a href="vol18.html" class="menu-btn">
-            <span class="label">Vol.18</span>
-            <span class="range">851 - 900</span>
-        </a>
-        <a href="vol19.html" class="menu-btn">
-            <span class="label">Vol.19</span>
-            <span class="range">901 - 950</span>
-        </a>
-        <a href="vol20.html" class="menu-btn">
-            <span class="label">Vol.20</span>
-            <span class="range">951 - 1000</span>
-        </a>
-    </div>
-
-</body>
-</html>
+    <h2 class="stage-1">Stage 1: Basic (1-500)</h2>
+    <div class="menu-grid s1
