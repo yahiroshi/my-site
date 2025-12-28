@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My English Vocabulary (Vol.1 - 41)</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* コントロールエリア */
+        .controls {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        /* カードエリア */
+        .card-container {
+            width: 100%;
+            max-width: 500px;
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 40px 20px;
+            text-align: center;
+            transition: transform 0.2s;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .word-en {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .word-ja {
+            font-size: 1.8rem;
+            color: #e74c3c;
+            opacity: 0; /* 最初は隠す */
+            transition: opacity 0.3s ease;
+        }
+
+        .word-ja.visible {
+            opacity: 1;
+        }
+
+        .card-info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* 操作ボタン */
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        /* 完了メッセージ */
+        .finished {
+            display: none;
+            font-size: 1.5rem;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>English Vocab Master</h1>
+
+    <div class="controls">
+        <label for="volSelect">Select Volume:</label>
+        <select id="volSelect">
+            </select>
+        <label>
+            <input type="checkbox" id="shuffleCheck"> ランダム出題
+        </label>
+    </div>
+
+    <div class="card-container" id="cardArea" onclick="toggleAnswer()">
+        <div class="card">
+            <div class="word-en" id="enText">Select Vol</div>
+            <div class="word-ja" id="jaText">---</div>
+            <div class="card-info" id="counter">--- / ---</div>
+        </div>
+    </div>
+
+    <div class="finished" id="finishMsg">Volume Complete! 🎉</div>
+
+    <div class="nav-buttons">
+        <button id="prevBtn" onclick="prevCard()">← Prev</button>
+        <button id="nextBtn" onclick="nextCard()">Next →</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // ★ここに Vol.1 ～ Vol.41 のデータをすべて貼り付けてください★
+        // ==========================================
+        const fullWordList = [
+            
+            // 例: { en: "hello", ja: "こんにちは" }, 
+            // 前回のチャット内容をすべてここにコピペしてください。
+            // 途中のコメント（// Vol.xx...）があっても問題ありません。
+// --- No.1 - 100 ---
+{ en: "time", ja: "時間" },
+{ en: "person", ja: "人" },
+{ en: "year", ja: "年" },
+{ en: "way", ja: "道、方法" },
+{ en: "day", ja: "日" },
+{ en: "thing", ja: "もの、こと" },
+{ en: "man", ja: "男" },
+{ en: "world", ja: "世界" },
+{ en: "life", ja: "生活、人生" },
+{ en: "hand", ja: "手" },
+{ en: "part", ja: "部分" },
+{ en: "child", ja: "子供" },
+{ en: "eye", ja: "目" },
+{ en: "woman", ja: "女" },
+{ en: "place", ja: "場所" },
+{ en: "work", ja: "仕事" },
+{ en: "week", ja: "週" },
+{ en: "case", ja: "場合" },
+{ en: "point", ja: "点、要点" },
+{ en: "government", ja: "政府" },
+{ en: "company", ja: "会社" },
+{ en: "number", ja: "数" },
+{ en: "group", ja: "集団" },
+{ en: "problem", ja: "問題" },
+{ en: "fact", ja: "事実" },
+{ en: "able", ja: "～できる" },
+{ en: "bad", ja: "悪い" },
+{ en: "best", ja: "最も良い" },
+{ en: "better", ja: "より良い" },
+{ en: "big", ja: "大きい" },
+{ en: "black", ja: "黒い" },
+{ en: "certain", ja: "確信して" },
+{ en: "clear", ja: "晴れた、明らかな" },
+{ en: "different", ja: "異なる" },
+{ en: "early", ja: "早い" },
+{ en: "easy", ja: "簡単な" },
+{ en: "economic", ja: "経済の" },
+{ en: "federal", ja: "連邦の" },
+{ en: "free", ja: "自由な" },
+{ en: "full", ja: "満ちた" },
+{ en: "good", ja: "良い" },
+{ en: "great", ja: "偉大な" },
+{ en: "hard", ja: "一生懸命な、硬い" },
+{ en: "high", ja: "高い" },
+{ en: "human", ja: "人間の" },
+{ en: "important", ja: "重要な" },
+{ en: "international", ja: "国際的な" },
+{ en: "large", ja: "大きい" },
+{ en: "late", ja: "遅い" },
+{ en: "little", ja: "小さい" },
+
+// --- No.51 - 100 ---
+{ en: "local", ja: "地元の" },
+{ en: "long", ja: "長い" },
+{ en: "low", ja: "低い" },
+{ en: "major", ja: "主要な" },
+{ en: "military", ja: "軍の" },
+{ en: "national", ja: "国家の" },
+{ en: "new", ja: "新しい" },
+{ en: "old", ja: "古い" },
+{ en: "only", ja: "唯一の" },
+{ en: "other", ja: "他の" },
+{ en: "political", ja: "政治の" },
+{ en: "possible", ja: "可能な" },
+{ en: "public", ja: "公の" },
+{ en: "real", ja: "本当の" },
+{ en: "recent", ja: "最近の" },
+{ en: "right", ja: "正しい、右の" },
+{ en: "small", ja: "小さい" },
+{ en: "social", ja: "社会の" },
+{ en: "special", ja: "特別な" },
+{ en: "strong", ja: "強い" },
+{ en: "sure", ja: "確信して" },
+{ en: "true", ja: "真実の" },
+{ en: "white", ja: "白い" },
+{ en: "whole", ja: "全体の" },
+{ en: "young", ja: "若い" },
+{ en: "become", ja: "～になる" },
+{ en: "begin", ja: "始める" },
+{ en: "believe", ja: "信じる" },
+{ en: "bring", ja: "持ってくる" },
+{ en: "build", ja: "建てる" },
+{ en: "buy", ja: "買う" },
+{ en: "call", ja: "呼ぶ" },
+{ en: "can", ja: "～できる" },
+{ en: "change", ja: "変える" },
+{ en: "come", ja: "来る" },
+{ en: "consider", ja: "よく考える" },
+{ en: "create", ja: "創造する" },
+{ en: "cut", ja: "切る" },
+{ en: "develop", ja: "発展させる" },
+{ en: "do", ja: "する" },
+{ en: "draw", ja: "描く" },
+{ en: "expect", ja: "期待する" },
+{ en: "fall", ja: "落ちる" },
+{ en: "feel", ja: "感じる" },
+{ en: "find", ja: "見つける" },
+{ en: "follow", ja: "従う" },
+{ en: "get", ja: "得る" },
+{ en: "give", ja: "与える" },
+{ en: "go", ja: "行く" },
+{ en: "grow", ja: "成長する" },
+
+// --- No.101 - 200 ---
+{ en: "happen", ja: "起こる" },
+{ en: "have", ja: "持っている" },
+{ en: "hear", ja: "聞く" },
+{ en: "help", ja: "助ける" },
+{ en: "hold", ja: "持つ、開催する" },
+{ en: "include", ja: "含む" },
+{ en: "keep", ja: "保つ" },
+{ en: "know", ja: "知っている" },
+{ en: "lead", ja: "導く" },
+{ en: "leave", ja: "去る、残す" },
+{ en: "let", ja: "～させる" },
+{ en: "like", ja: "好む" },
+{ en: "live", ja: "住む" },
+{ en: "look", ja: "見る" },
+{ en: "lose", ja: "失う" },
+{ en: "make", ja: "作る" },
+{ en: "may", ja: "～かもしれない" },
+{ en: "mean", ja: "意味する" },
+{ en: "meet", ja: "会う" },
+{ en: "move", ja: "動く" },
+{ en: "must", ja: "～しなければならない" },
+{ en: "need", ja: "必要とする" },
+{ en: "offer", ja: "提供する" },
+{ en: "open", ja: "開ける" },
+{ en: "pay", ja: "払う" },
+{ en: "play", ja: "遊ぶ" },
+{ en: "provide", ja: "供給する" },
+{ en: "put", ja: "置く" },
+{ en: "reach", ja: "届く" },
+{ en: "read", ja: "読む" },
+{ en: "remain", ja: "残る" },
+{ en: "remember", ja: "覚えている" },
+{ en: "report", ja: "報告する" },
+{ en: "require", ja: "要求する" },
+{ en: "return", ja: "戻る" },
+{ en: "run", ja: "走る" },
+{ en: "say", ja: "言う" },
+{ en: "see", ja: "見える" },
+{ en: "seem", ja: "～のように見える" },
+{ en: "send", ja: "送る" },
+{ en: "set", ja: "セットする" },
+{ en: "show", ja: "見せる" },
+{ en: "sit", ja: "座る" },
+{ en: "speak", ja: "話す" },
+{ en: "spend", ja: "費やす" },
+{ en: "stand", ja: "立つ" },
+{ en: "start", ja: "始める" },
+{ en: "stay", ja: "滞在する" },
+{ en: "stop", ja: "止まる" },
+{ en: "suggest", ja: "提案する" },
+{ en: "take", ja: "取る" },
+{ en: "talk", ja: "話す" },
+{ en: "tell", ja: "伝える" },
+{ en: "think", ja: "考える" },
+{ en: "try", ja: "試す" },
+{ en: "turn", ja: "回る" },
+{ en: "understand", ja: "理解する" },
+{ en: "use", ja: "使う" },
+{ en: "wait", ja: "待つ" },
+{ en: "walk", ja: "歩く" },
+{ en: "want", ja: "欲しい" },
+{ en: "watch", ja: "見る" },
+{ en: "will", ja: "～だろう" },
+{ en: "win", ja: "勝つ" },
+{ en: "work", ja: "働く" },
+{ en: "write", ja: "書く" },
+{ en: "about", ja: "～について" },
+{ en: "above", ja: "～の上に" },
+{ en: "across", ja: "～を横切って" },
+{ en: "after", ja: "～の後に" },
+{ en: "against", ja: "～に反対して" },
+{ en: "along", ja: "～に沿って" },
+{ en: "among", ja: "～の間に" },
+{ en: "around", ja: "～の周りに" },
+{ en: "as", ja: "～として" },
+{ en: "at", ja: "～で" },
+{ en: "before", ja: "～の前に" },
+{ en: "behind", ja: "～の後ろに" },
+{ en: "between", ja: "～の間に" },
+{ en: "beyond", ja: "～を超えて" },
+{ en: "but", ja: "しかし" },
+{ en: "by", ja: "～によって" },
+{ en: "down", ja: "下に" },
+{ en: "during", ja: "～の間" },
+{ en: "for", ja: "～のために" },
+{ en: "from", ja: "～から" },
+{ en: "in", ja: "～の中に" },
+{ en: "inside", ja: "～の内側に" },
+{ en: "into", ja: "～の中へ" },
+{ en: "near", ja: "近くに" },
+{ en: "of", ja: "～の" },
+{ en: "off", ja: "～から離れて" },
+{ en: "on", ja: "～の上に" },
+{ en: "out", ja: "外へ" },
+{ en: "outside", ja: "外側に" },
+{ en: "over", ja: "～を越えて" },
+{ en: "per", ja: "～につき" },
+{ en: "since", ja: "～以来" },
+{ en: "than", ja: "～より" },
+{ en: "through", ja: "～を通って" },
+
+// --- No.201 - 300 ---
+{ en: "to", ja: "～へ" },
+{ en: "toward", ja: "～の方へ" },
+{ en: "under", ja: "～の下に" },
+{ en: "until", ja: "～まで" },
+{ en: "up", ja: "上に" },
+{ en: "upon", ja: "～の上に" },
+{ en: "with", ja: "～と一緒に" },
+{ en: "within", ja: "～以内に" },
+{ en: "without", ja: "～なしで" },
+{ en: "area", ja: "地域" },
+{ en: "money", ja: "お金" },
+{ en: "story", ja: "物語" },
+{ en: "fact", ja: "事実" },
+{ en: "month", ja: "月" },
+{ en: "lot", ja: "たくさん" },
+{ en: "right", ja: "権利" },
+{ en: "study", ja: "勉強" },
+{ en: "book", ja: "本" },
+{ en: "eye", ja: "目" },
+{ en: "job", ja: "仕事" },
+{ en: "word", ja: "言葉" },
+{ en: "business", ja: "ビジネス" },
+{ en: "issue", ja: "問題" },
+{ en: "side", ja: "側" },
+{ en: "kind", ja: "種類" },
+{ en: "head", ja: "頭" },
+{ en: "house", ja: "家" },
+{ en: "service", ja: "サービス" },
+{ en: "friend", ja: "友達" },
+{ en: "father", ja: "父" },
+{ en: "power", ja: "力" },
+{ en: "hour", ja: "時間" },
+{ en: "game", ja: "試合" },
+{ en: "line", ja: "線" },
+{ en: "end", ja: "終わり" },
+{ en: "member", ja: "メンバー" },
+{ en: "law", ja: "法律" },
+{ en: "car", ja: "車" },
+{ en: "city", ja: "都市" },
+{ en: "community", ja: "地域社会" },
+{ en: "name", ja: "名前" },
+{ en: "president", ja: "大統領、社長" },
+{ en: "team", ja: "チーム" },
+{ en: "minute", ja: "分" },
+{ en: "idea", ja: "考え" },
+{ en: "kid", ja: "子供" },
+{ en: "body", ja: "体" },
+{ en: "information", ja: "情報" },
+{ en: "back", ja: "背中" },
+{ en: "parent", ja: "親" },
+{ en: "face", ja: "顔" },
+{ en: "others", ja: "他人" },
+{ en: "level", ja: "レベル" },
+{ en: "office", ja: "事務所" },
+{ en: "door", ja: "ドア" },
+{ en: "health", ja: "健康" },
+{ en: "person", ja: "人" },
+{ en: "art", ja: "芸術" },
+{ en: "war", ja: "戦争" },
+{ en: "history", ja: "歴史" },
+{ en: "party", ja: "パーティー、政党" },
+{ en: "result", ja: "結果" },
+{ en: "change", ja: "変化" },
+{ en: "morning", ja: "朝" },
+{ en: "reason", ja: "理由" },
+{ en: "research", ja: "研究" },
+{ en: "girl", ja: "女の子" },
+{ en: "guy", ja: "男" },
+{ en: "moment", ja: "瞬間" },
+{ en: "air", ja: "空気" },
+{ en: "teacher", ja: "先生" },
+{ en: "force", ja: "力" },
+{ en: "education", ja: "教育" },
+{ en: "foot", ja: "足" },
+{ en: "boy", ja: "男の子" },
+{ en: "age", ja: "年齢" },
+{ en: "policy", ja: "政策" },
+{ en: "music", ja: "音楽" },
+{ en: "market", ja: "市場" },
+{ en: "sense", ja: "感覚" },
+{ en: "nation", ja: "国家" },
+{ en: "plan", ja: "計画" },
+{ en: "college", ja: "大学" },
+{ en: "interest", ja: "興味" },
+{ en: "death", ja: "死" },
+{ en: "experience", ja: "経験" },
+{ en: "effect", ja: "効果" },
+{ en: "use", ja: "使用" },
+{ en: "class", ja: "授業、階級" },
+{ en: "control", ja: "支配" },
+{ en: "care", ja: "世話" },
+{ en: "field", ja: "野原、分野" },
+{ en: "development", ja: "発展" },
+{ en: "role", ja: "役割" },
+{ en: "effort", ja: "努力" },
+{ en: "rate", ja: "割合" },
+{ en: "heart", ja: "心臓" },
+{ en: "drug", ja: "薬" },
+
+// --- No.301 - 400 ---
+{ en: "show", ja: "ショー" },
+{ en: "leader", ja: "リーダー" },
+{ en: "light", ja: "光" },
+{ en: "voice", ja: "声" },
+{ en: "wife", ja: "妻" },
+{ en: "police", ja: "警察" },
+{ en: "mind", ja: "心" },
+{ en: "price", ja: "価格" },
+{ en: "report", ja: "報告書" },
+{ en: "decision", ja: "決定" },
+{ en: "son", ja: "息子" },
+{ en: "view", ja: "眺め、見解" },
+{ en: "relationship", ja: "関係" },
+{ en: "town", ja: "町" },
+{ en: "road", ja: "道路" },
+{ en: "arm", ja: "腕" },
+{ en: "difference", ja: "違い" },
+{ en: "value", ja: "価値" },
+{ en: "building", ja: "建物" },
+{ en: "action", ja: "行動" },
+{ en: "model", ja: "模型" },
+{ en: "season", ja: "季節" },
+{ en: "society", ja: "社会" },
+{ en: "tax", ja: "税金" },
+{ en: "director", ja: "取締役" },
+{ en: "position", ja: "位置" },
+{ en: "player", ja: "選手" },
+{ en: "record", ja: "記録" },
+{ en: "paper", ja: "紙" },
+{ en: "space", ja: "空間、宇宙" },
+{ en: "ground", ja: "地面" },
+{ en: "form", ja: "形" },
+{ en: "event", ja: "出来事" },
+{ en: "official", ja: "役人" },
+{ en: "matter", ja: "事柄" },
+{ en: "center", ja: "中心" },
+{ en: "couple", ja: "カップル" },
+{ en: "site", ja: "敷地" },
+{ en: "project", ja: "計画" },
+{ en: "activity", ja: "活動" },
+{ en: "star", ja: "星" },
+{ en: "table", ja: "テーブル" },
+{ en: "need", ja: "必要" },
+{ en: "court", ja: "法廷" },
+{ en: "oil", ja: "油" },
+{ en: "situation", ja: "状況" },
+{ en: "cost", ja: "費用" },
+{ en: "industry", ja: "産業" },
+{ en: "figure", ja: "数字、姿" },
+{ en: "street", ja: "通り" },
+{ en: "image", ja: "画像" },
+{ en: "phone", ja: "電話" },
+{ en: "data", ja: "データ" },
+{ en: "picture", ja: "写真" },
+{ en: "practice", ja: "練習" },
+{ en: "piece", ja: "一片" },
+{ en: "land", ja: "土地" },
+{ en: "product", ja: "製品" },
+{ en: "doctor", ja: "医者" },
+{ en: "wall", ja: "壁" },
+{ en: "patient", ja: "患者" },
+{ en: "worker", ja: "労働者" },
+{ en: "news", ja: "ニュース" },
+{ en: "test", ja: "テスト" },
+{ en: "movie", ja: "映画" },
+{ en: "north", ja: "北" },
+{ en: "love", ja: "愛" },
+{ en: "support", ja: "支持" },
+{ en: "technology", ja: "技術" },
+{ en: "step", ja: "歩み" },
+{ en: "baby", ja: "赤ちゃん" },
+{ en: "computer", ja: "コンピュータ" },
+{ en: "type", ja: "型" },
+{ en: "attention", ja: "注意" },
+{ en: "film", ja: "映画、フィルム" },
+{ en: "tree", ja: "木" },
+{ en: "source", ja: "源" },
+{ en: "organization", ja: "組織" },
+{ en: "hair", ja: "髪" },
+{ en: "look", ja: "外見" },
+{ en: "century", ja: "世紀" },
+{ en: "evidence", ja: "証拠" },
+{ en: "window", ja: "窓" },
+{ en: "culture", ja: "文化" },
+{ en: "chance", ja: "機会" },
+{ en: "brother", ja: "兄弟" },
+{ en: "energy", ja: "エネルギー" },
+{ en: "period", ja: "期間" },
+{ en: "course", ja: "進路" },
+{ en: "summer", ja: "夏" },
+{ en: "less", ja: "より少ない" },
+{ en: "plant", ja: "植物" },
+{ en: "opportunity", ja: "機会" },
+{ en: "term", ja: "用語、期間" },
+{ en: "letter", ja: "手紙" },
+{ en: "condition", ja: "状態" },
+{ en: "choice", ja: "選択" },
+{ en: "rule", ja: "規則" },
+{ en: "daughter", ja: "娘" },
+
+// --- No.401 - 500 ---
+{ en: "administration", ja: "管理、行政" },
+{ en: "south", ja: "南" },
+{ en: "husband", ja: "夫" },
+{ en: "floor", ja: "床" },
+{ en: "campaign", ja: "キャンペーン" },
+{ en: "material", ja: "材料" },
+{ en: "population", ja: "人口" },
+{ en: "well", ja: "井戸" },
+{ en: "call", ja: "呼びかけ" },
+{ en: "economy", ja: "経済" },
+{ en: "medical", ja: "医学の" },
+{ en: "hospital", ja: "病院" },
+{ en: "church", ja: "教会" },
+{ en: "risk", ja: "危険" },
+{ en: "fire", ja: "火" },
+{ en: "future", ja: "未来" },
+{ en: "defense", ja: "防衛" },
+{ en: "security", ja: "安全" },
+{ en: "bank", ja: "銀行" },
+{ en: "west", ja: "西" },
+{ en: "sport", ja: "スポーツ" },
+{ en: "board", ja: "板、委員会" },
+{ en: "subject", ja: "主題" },
+{ en: "officer", ja: "役人" },
+{ en: "rest", ja: "休息" },
+{ en: "behavior", ja: "振る舞い" },
+{ en: "performance", ja: "演技" },
+{ en: "top", ja: "頂上" },
+{ en: "goal", ja: "目標" },
+{ en: "second", ja: "秒" },
+{ en: "bed", ja: "ベッド" },
+{ en: "order", ja: "注文" },
+{ en: "author", ja: "著者" },
+{ en: "blood", ja: "血" },
+{ en: "agency", ja: "代理店" },
+{ en: "nature", ja: "自然" },
+{ en: "color", ja: "色" },
+{ en: "store", ja: "店" },
+{ en: "sound", ja: "音" },
+{ en: "movement", ja: "動き" },
+{ en: "page", ja: "ページ" },
+{ en: "race", ja: "競争" },
+{ en: "concern", ja: "関心事" },
+{ en: "series", ja: "連続" },
+{ en: "language", ja: "言語" },
+{ en: "response", ja: "応答" },
+{ en: "animal", ja: "動物" },
+{ en: "factor", ja: "要因" },
+{ en: "decade", ja: "10年" },
+{ en: "article", ja: "記事" },
+{ en: "east", ja: "東" },
+{ en: "artist", ja: "芸術家" },
+{ en: "scene", ja: "場面" },
+{ en: "stock", ja: "在庫、株" },
+{ en: "career", ja: "経歴" },
+{ en: "treatment", ja: "治療" },
+{ en: "approach", ja: "接近" },
+{ en: "size", ja: "大きさ" },
+{ en: "dog", ja: "犬" },
+{ en: "fund", ja: "資金" },
+{ en: "media", ja: "メディア" },
+{ en: "sign", ja: "記号" },
+{ en: "thought", ja: "思考" },
+{ en: "list", ja: "リスト" },
+{ en: "individual", ja: "個人" },
+{ en: "simple", ja: "単純な" },
+{ en: "quality", ja: "質" },
+{ en: "pressure", ja: "圧力" },
+{ en: "answer", ja: "答え" },
+{ en: "resource", ja: "資源" },
+{ en: "meeting", ja: "会議" },
+{ en: "disease", ja: "病気" },
+{ en: "success", ja: "成功" },
+{ en: "cup", ja: "カップ" },
+{ en: "amount", ja: "量" },
+{ en: "ability", ja: "能力" },
+{ en: "staff", ja: "職員" },
+{ en: "growth", ja: "成長" },
+{ en: "loss", ja: "損失" },
+{ en: "degree", ja: "程度、学位" },
+{ en: "attack", ja: "攻撃" },
+{ en: "region", ja: "地域" },
+{ en: "television", ja: "テレビ" },
+{ en: "box", ja: "箱" },
+{ en: "trade", ja: "貿易" },
+{ en: "deal", ja: "取引" },
+{ en: "election", ja: "選挙" },
+{ en: "feeling", ja: "感情" },
+{ en: "standard", ja: "標準" },
+{ en: "bill", ja: "請求書" },
+{ en: "message", ja: "メッセージ" },
+{ en: "analysis", ja: "分析" },
+{ en: "benefit", ja: "利益" },
+{ en: "sex", ja: "性" },
+{ en: "lawyer", ja: "弁護士" },
+{ en: "section", ja: "部分" },
+{ en: "glass", ja: "ガラス" },
+{ en: "skill", ja: "技術" },
+{ en: "sister", ja: "姉妹" },
+
+// --- No.501 - 600 ---
+{ en: "professor", ja: "教授" },
+{ en: "operation", ja: "手術、操作" },
+{ en: "crime", ja: "犯罪" },
+{ en: "stage", ja: "舞台" },
+{ en: "authority", ja: "権威" },
+{ en: "design", ja: "デザイン" },
+{ en: "sort", ja: "種類" },
+{ en: "one", ja: "人、もの" },
+{ en: "knowledge", ja: "知識" },
+{ en: "gun", ja: "銃" },
+{ en: "station", ja: "駅" },
+{ en: "strategy", ja: "戦略" },
+{ en: "truth", ja: "真実" },
+{ en: "song", ja: "歌" },
+{ en: "example", ja: "例" },
+{ en: "environment", ja: "環境" },
+{ en: "leg", ja: "脚" },
+{ en: "audience", ja: "聴衆" },
+{ en: "executive", ja: "重役" },
+{ en: "note", ja: "メモ" },
+{ en: "manager", ja: "管理者" },
+{ en: "spring", ja: "春" },
+{ en: "management", ja: "経営" },
+{ en: "peace", ja: "平和" },
+{ en: "task", ja: "仕事" },
+{ en: "statement", ja: "声明" },
+{ en: "shot", ja: "発砲" },
+{ en: "theory", ja: "理論" },
+{ en: "conference", ja: "会議" },
+{ en: "base", ja: "土台" },
+{ en: "pain", ja: "痛み" },
+{ en: "chairman", ja: "議長" },
+{ en: "production", ja: "生産" },
+{ en: "food", ja: "食べ物" },
+{ en: "range", ja: "範囲" },
+{ en: "past", ja: "過去" },
+{ en: "fish", ja: "魚" },
+{ en: "camera", ja: "カメラ" },
+{ en: "weight", ja: "重さ" },
+{ en: "check", ja: "小切手、確認" },
+{ en: "sea", ja: "海" },
+{ en: "dream", ja: "夢" },
+{ en: "bar", ja: "棒、酒場" },
+{ en: "miss", ja: "失敗" },
+{ en: "stuff", ja: "もの" },
+{ en: "employee", ja: "従業員" },
+{ en: "memory", ja: "記憶" },
+{ en: "rock", ja: "岩" },
+{ en: "ball", ja: "ボール" },
+{ en: "machine", ja: "機械" },
+{ en: "direction", ja: "方向" },
+{ en: "trip", ja: "旅行" },
+{ en: "politics", ja: "政治" },
+{ en: "communication", ja: "通信" },
+{ en: "interview", ja: "面接" },
+{ en: "generation", ja: "世代" },
+{ en: "association", ja: "協会" },
+{ en: "movie", ja: "映画" },
+{ en: "structure", ja: "構造" },
+{ en: "candidate", ja: "候補者" },
+{ en: "violence", ja: "暴力" },
+{ en: "debate", ja: "討論" },
+{ en: "bit", ja: "少し" },
+{ en: "card", ja: "カード" },
+{ en: "investment", ja: "投資" },
+{ en: "sun", ja: "太陽" },
+{ en: "discussion", ja: "議論" },
+{ en: "finger", ja: "指" },
+{ en: "garden", ja: "庭" },
+{ en: "collection", ja: "収集" },
+{ en: "victim", ja: "犠牲者" },
+{ en: "marriage", ja: "結婚" },
+{ en: "institution", ja: "機関" },
+{ en: "kitchen", ja: "台所" },
+{ en: "speech", ja: "演説" },
+{ en: "task", ja: "任務" },
+{ en: "civil", ja: "市民の" },
+{ en: "mouth", ja: "口" },
+{ en: "bag", ja: "鞄" },
+{ en: "reality", ja: "現実" },
+{ en: "focus", ja: "焦点" },
+{ en: "threat", ja: "脅威" },
+{ en: "responsibility", ja: "責任" },
+{ en: "smile", ja: "微笑み" },
+{ en: "budget", ja: "予算" },
+{ en: "sentence", ja: "文" },
+{ en: "fear", ja: "恐怖" },
+{ en: "shoulder", ja: "肩" },
+{ en: "dinner", ja: "夕食" },
+{ en: "investment", ja: "投資" },
+{ en: "score", ja: "得点" },
+{ en: "attack", ja: "攻撃" },
+{ en: "break", ja: "休憩" },
+{ en: "audience", ja: "観衆" },
+{ en: "letter", ja: "文字" },
+{ en: "partner", ja: "パートナー" },
+{ en: "mill", ja: "工場" },
+{ en: "traffic", ja: "交通" },
+{ en: "muscle", ja: "筋肉" },
+{ en: "network", ja: "ネットワーク" },
+
+// --- No.601 - 700 ---
+{ en: "gas", ja: "ガス" },
+{ en: "landscape", ja: "風景" },
+{ en: "loss", ja: "喪失" },
+{ en: "dig", ja: "掘る" },
+{ en: "chain", ja: "鎖" },
+{ en: "address", ja: "住所" },
+{ en: "shot", ja: "発射" },
+{ en: "powerful", ja: "強力な" },
+{ en: "perfect", ja: "完璧な" },
+{ en: "nine", ja: "9" },
+{ en: "nuclear", ja: "核の" },
+{ en: "trip", ja: "旅" },
+{ en: "colleague", ja: "同僚" },
+{ en: "farm", ja: "農場" },
+{ en: "career", ja: "経歴" },
+{ en: "tour", ja: "旅行" },
+{ en: "hall", ja: "ホール" },
+{ en: "ocean", ja: "大洋" },
+{ en: "milk", ja: "牛乳" },
+{ en: "option", ja: "選択肢" },
+{ en: "park", ja: "公園" },
+{ en: "vehicle", ja: "乗り物" },
+{ en: "mountain", ja: "山" },
+{ en: "front", ja: "前" },
+{ en: "sky", ja: "空" },
+{ en: "wood", ja: "木材" },
+{ en: "video", ja: "ビデオ" },
+{ en: "global", ja: "世界的な" },
+{ en: "reform", ja: "改革" },
+{ en: "access", ja: "接近" },
+{ en: "newspaper", ja: "新聞" },
+{ en: "judge", ja: "裁判官" },
+{ en: "relation", ja: "関係" },
+{ en: "labor", ja: "労働" },
+{ en: "annual", ja: "毎年の" },
+{ en: "spring", ja: "泉" },
+{ en: "safe", ja: "安全な" },
+{ en: "screen", ja: "画面" },
+{ en: "travel", ja: "旅行" },
+{ en: "shop", ja: "店" },
+{ en: "gold", ja: "金" },
+{ en: "club", ja: "クラブ" },
+{ en: "farm", ja: "農場" },
+{ en: "increase", ja: "増加" },
+{ en: "middle", ja: "真ん中" },
+{ en: "sea", ja: "海" },
+{ en: "dream", ja: "夢" },
+{ en: "presence", ja: "存在" },
+{ en: "code", ja: "規範" },
+{ en: "weekend", ja: "週末" },
+{ en: "crisis", ja: "危機" },
+{ en: "audience", ja: "聴衆" },
+{ en: "fight", ja: "戦い" },
+{ en: "behavior", ja: "態度" },
+{ en: "camera", ja: "カメラ" },
+{ en: "weight", ja: "体重" },
+{ en: "star", ja: "スター" },
+{ en: "garden", ja: "庭" },
+{ en: "trouble", ja: "困難" },
+{ en: "culture", ja: "教養" },
+{ en: "director", ja: "監督" },
+{ en: "machine", ja: "機械" },
+{ en: "return", ja: "帰還" },
+{ en: "magazine", ja: "雑誌" },
+{ en: "guest", ja: "客" },
+{ en: "message", ja: "伝言" },
+{ en: "status", ja: "地位" },
+{ en: "map", ja: "地図" },
+{ en: "start", ja: "開始" },
+{ en: "spirit", ja: "精神" },
+{ en: "student", ja: "学生" },
+{ en: "resource", ja: "資源" },
+{ en: "marriage", ja: "結婚" },
+{ en: "discussion", ja: "討議" },
+{ en: "plant", ja: "工場" },
+{ en: "conflict", ja: "紛争" },
+{ en: "stone", ja: "石" },
+{ en: "interview", ja: "会見" },
+{ en: "wind", ja: "風" },
+{ en: "attitude", ja: "態度" },
+{ en: "benefit", ja: "恩恵" },
+{ en: "start", ja: "出発" },
+{ en: "river", ja: "川" },
+{ en: "charge", ja: "料金" },
+{ en: "key", ja: "鍵" },
+{ en: "weapon", ja: "武器" },
+{ en: "mystery", ja: "謎" },
+{ en: "way", ja: "やり方" },
+{ en: "mark", ja: "印" },
+{ en: "harm", ja: "害" },
+{ en: "green", ja: "緑" },
+{ en: "track", ja: "通った跡" },
+{ en: "virus", ja: "ウイルス" },
+{ en: "brain", ja: "脳" },
+{ en: "staff", ja: "スタッフ" },
+{ en: "trade", ja: "商売" },
+{ en: "gain", ja: "利益" },
+{ en: "play", ja: "劇" },
+{ en: "bridge", ja: "橋" },
+{ en: "market", ja: "相場" },
+            
+        ]; 
+        // ==========================================
+        // データ貼り付けエリア終了
+        // ==========================================
+
+        const ITEMS_PER_VOL = 50; // 1ボリュームあたりの単語数
+        let currentVolIndex = 0;
+        let currentList = [];
+        let currentIndex = 0;
+        let isShuffle = false;
+
+        const volSelect = document.getElementById('volSelect');
+        const enText = document.getElementById('enText');
+        const jaText = document.getElementById('jaText');
+        const counter = document.getElementById('counter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const finishMsg = document.getElementById('finishMsg');
+        const cardArea = document.getElementById('cardArea');
+        const shuffleCheck = document.getElementById('shuffleCheck');
+
+        // 初期化処理
+        function init() {
+            // ボリュームのプルダウンを作成
+            // 全データ数を50で割ってボリューム数を計算
+            const totalVols = Math.ceil(fullWordList.length / ITEMS_PER_VOL);
+            
+            volSelect.innerHTML = "";
+            for (let i = 0; i < totalVols; i++) {
+                const start = i * ITEMS_PER_VOL + 1;
+                const end = Math.min((i + 1) * ITEMS_PER_VOL, fullWordList.length);
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = `Vol.${i + 1} (No.${start} - ${end})`;
+                volSelect.appendChild(option);
+            }
+
+            // イベントリスナー
+            volSelect.addEventListener('change', (e) => {
+                loadVolume(parseInt(e.target.value));
+            });
+
+            shuffleCheck.addEventListener('change', (e) => {
+                isShuffle = e.target.checked;
+                loadVolume(currentVolIndex); // 設定変更でリロード
+            });
+
+            // キーボード操作対応
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    toggleAnswer();
+                    e.preventDefault();
+                } else if (e.code === 'ArrowRight') {
+                    nextCard();
+                } else if (e.code === 'ArrowLeft') {
+                    prevCard();
+                }
+            });
+
+            // 最初のボリュームをロード
+            if (fullWordList.length > 0) {
+                loadVolume(0);
+            } else {
+                enText.textContent = "No Data";
+                jaText.textContent = "データを貼り付けてください";
+            }
+        }
+
+        // 指定したボリュームを読み込む
+        function loadVolume(volIdx) {
+            currentVolIndex = volIdx;
+            const start = volIdx * ITEMS_PER_VOL;
+            const end = start + ITEMS_PER_VOL;
+            
+            // 元の配列から該当範囲を切り出す
+            let listSlice = fullWordList.slice(start, end);
+
+            // シャッフルモードなら混ぜる
+            if (isShuffle) {
+                listSlice = shuffleArray(listSlice); // コピーをシャッフル
+            }
+
+            currentList = listSlice;
+            currentIndex = 0;
+            
+            finishMsg.style.display = 'none';
+            cardArea.style.display = 'block';
+            updateCard();
+        }
+
+        // カード表示更新
+        function updateCard() {
+            if (currentList.length === 0) return;
+
+            const item = currentList[currentIndex];
+            enText.textContent = item.en;
+            jaText.textContent = item.ja;
+            jaText.classList.remove('visible'); // 答えを隠す
+
+            counter.textContent = `${currentIndex + 1} / ${currentList.length}`;
+
+            // ボタン制御
+            prevBtn.disabled = (currentIndex === 0);
+            nextBtn.textContent = (currentIndex === currentList.length - 1) ? "Finish" : "Next →";
+        }
+
+        // 答えの表示切替
+        function toggleAnswer() {
+            jaText.classList.toggle('visible');
+        }
+
+        // 次へ
+        function nextCard() {
+            // まだ答えを見ていない場合は、一度答えを表示する（お好みで削除可）
+            if (!jaText.classList.contains('visible')) {
+                jaText.classList.add('visible');
+                return; 
+            }
+
+            if (currentIndex < currentList.length - 1) {
+                currentIndex++;
+                updateCard();
+            } else {
+                // 最後までいったら
+                cardArea.style.display = 'none';
+                finishMsg.style.display = 'block';
+            }
+        }
+
+        // 前へ
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+            finishMsg.style.display = 'none';
+            cardArea.style.display = 'block';
+        }
+
+        // 配列シャッフル関数 (Fisher-Yates)
+        function shuffleArray(array) {
+            const clone = [...array]; // 元の配列を壊さないようコピー
+            for (let i = clone.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [clone[i], clone[j]] = [clone[j], clone[i]];
+            }
+            return clone;
+        }
+
+        // 開始
+        init();
+
+    </script>
+</body>
+</html>
