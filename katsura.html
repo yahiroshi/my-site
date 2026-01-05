@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英検1級 単語特訓</title>
+    <style>
+        :root {
+            --primary: #1a237e; /* 紺色 */
+            --accent: #c5a600;  /* ゴールド */
+            --bg: #f5f5f7;
+            --text: #333;
+            --correct: #2e7d32;
+            --wrong: #c62828;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; }
+        .status { font-size: 0.9rem; color: #ddd; }
+
+        /* プログレスバー */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #e0e0e0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* 出題エリア */
+        .question-box {
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .word {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .pos-label {
+            display: inline-block;
+            background: #eee;
+            color: #666;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        /* 選択肢 */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 20px;
+        }
+
+        @media (min-width: 500px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: #f0f4ff;
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct);
+            border-color: var(--correct);
+            color: white;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong);
+            border-color: var(--wrong);
+            color: white;
+            opacity: 0.7;
+        }
+
+        /* 結果画面 */
+        .result-view {
+            display: none;
+            padding: 40px;
+            text-align: center;
+        }
+        .score { font-size: 4rem; font-weight: bold; color: var(--primary); }
+        .btn-restart {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="game-view">
+        <header>
+            <h1>英検1級 Vocabulary</h1>
+            <span class="status" id="status-text">1 / 10</span>
+        </header>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="question-box">
+            <span class="pos-label" id="pos-label">Word</span>
+            <div class="word" id="question-word">Loading...</div>
+        </div>
+
+        <div class="options-grid" id="options-area">
+            </div>
+    </div>
+
+    <div id="result-view" class="result-view">
+        <h2>Result</h2>
+        <div class="score" id="final-score">0%</div>
+        <p id="feedback-text"></p>
+        <button class="btn-restart" onclick="startTest()">再挑戦 (Shuffle)</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 英検1級レベル 100単語リスト
+    // ==========================================
+    const wordList = [
+        { en: "abate", ja: "和らぐ、減ずる" },
+        { en: "abdicate", ja: "（王位などを）退く" },
+        { en: "abhor", ja: "～を忌み嫌う" },
+        { en: "abject", ja: "絶望的な、悲惨な" },
+        { en: "abortive", ja: "失敗に終わった" },
+        { en: "abrasive", ja: "研磨作用のある、不愉快な" },
+        { en: "abridge", ja: "～を要約する" },
+        { en: "absolve", ja: "～を免除する、無罪とする" },
+        { en: "abstain", ja: "（投票などを）棄権する、控える" },
+        { en: "acrimonious", ja: "（言葉などが）激しい、辛辣な" },
+        { en: "acumen", ja: "鋭い洞察力" },
+        { en: "adamant", ja: "断固とした" },
+        { en: "admonish", ja: "～を諭す、警告する" },
+        { en: "adroit", ja: "巧みな、機敏な" },
+        { en: "adulation", ja: "お世辞、追従" },
+        { en: "adversary", ja: "敵対者" },
+        { en: "affable", ja: "愛想のよい" },
+        { en: "affluent", ja: "裕福な" },
+        { en: "aggrandize", ja: "（権力などを）拡大する" },
+        { en: "alacrity", ja: "機敏、活発" },
+        { en: "alias", ja: "別名、偽名" },
+        { en: "alleviate", ja: "（苦痛などを）軽減する" },
+        { en: "allude", ja: "ほのめかす" },
+        { en: "aloof", ja: "よそよそしい" },
+        { en: "altruistic", ja: "利他的な" },
+        { en: "ambivalent", ja: "相反する感情を持った" },
+        { en: "ameliorate", ja: "～を改善する" },
+        { en: "amicable", ja: "友好的な" },
+        { en: "amnesty", ja: "恩赦" },
+        { en: "amorphous", ja: "無定形の" },
+        { en: "anachronism", ja: "時代錯誤" },
+        { en: "animus", ja: "敵意" },
+        { en: "annihilate", ja: "～を全滅させる" },
+        { en: "anomalous", ja: "変則的な、異例の" },
+        { en: "antagonism", ja: "敵対、対立" },
+        { en: "apathy", ja: "無関心" },
+        { en: "appease", ja: "～をなだめる" },
+        { en: "apprehensive", ja: "懸念している" },
+        { en: "arbitrary", ja: "恣意的な、独断的な" },
+        { en: "archaic", ja: "古風な" },
+        { en: "arduous", ja: "骨の折れる" },
+        { en: "articulate", ja: "はっきり述べる" },
+        { en: "ascetic", ja: "禁欲的な" },
+        { en: "assiduous", ja: "勤勉な" },
+        { en: "assuage", ja: "（不安などを）鎮める" },
+        { en: "astute", ja: "抜け目のない" },
+        { en: "atrophy", ja: "萎縮する、衰退する" },
+        { en: "attenuate", ja: "～を弱める、薄める" },
+        { en: "audacious", ja: "大胆不敵な" },
+        { en: "augment", ja: "～を増加させる" },
+        { en: "auspicious", ja: "幸先の良い" },
+        { en: "austere", ja: "厳格な、質素な" },
+        { en: "avarice", ja: "強欲" },
+        { en: "aversion", ja: "嫌悪" },
+        { en: "banal", ja: "ありふれた、陳腐な" },
+        { en: "bane", ja: "破滅の元" },
+        { en: "belligerent", ja: "好戦的な" },
+        { en: "benevolent", ja: "慈悲深い" },
+        { en: "benign", ja: "良性の、温和な" },
+        { en: "bigot", ja: "偏屈者" },
+        { en: "blatant", ja: "露骨な、騒々しい" },
+        { en: "bleak", ja: "荒涼とした、暗い" },
+        { en: "bode", ja: "～の前兆となる" },
+        { en: "bogus", ja: "偽の" },
+        { en: "boisterous", ja: "騒がしい" },
+        { en: "bolster", ja: "～を強化する、支持する" },
+        { en: "bombastic", ja: "大げさな" },
+        { en: "boon", ja: "恩恵" },
+        { en: "breach", ja: "違反、不履行" },
+        { en: "brevity", ja: "簡潔さ" },
+        { en: "brisk", ja: "活発な" },
+        { en: "brusque", ja: "ぶっきらぼうな" },
+        { en: "burgeon", ja: "急成長する" },
+        { en: "cajole", ja: "（おだてて）～させる" },
+        { en: "calamity", ja: "大災害" },
+        { en: "callous", ja: "冷淡な" },
+        { en: "candid", ja: "率直な" },
+        { en: "capitulate", ja: "降伏する" },
+        { en: "capricious", ja: "気まぐれな" },
+        { en: "castigate", ja: "～を酷評する" },
+        { en: "catalyst", ja: "触媒、きっかけ" },
+        { en: "caustic", ja: "腐食性の、辛辣な" },
+        { en: "censure", ja: "～を非難する" },
+        { en: "chronic", ja: "慢性の" },
+        { en: "circumspect", ja: "慎重な" },
+        { en: "clandestine", ja: "秘密の" },
+        { en: "coalesce", ja: "合体する" },
+        { en: "coerce", ja: "～を強要する" },
+        { en: "cogent", ja: "説得力のある" },
+        { en: "coherent", ja: "首尾一貫した" },
+        { en: "collusion", ja: "結託、共謀" },
+        { en: "commensurate", ja: "釣り合った" },
+        { en: "complacent", ja: "自己満足した" },
+        { en: "concede", ja: "～を認める、譲歩する" },
+        { en: "conciliatory", ja: "なだめるような" },
+        { en: "concur", ja: "同意する" },
+        { en: "condone", ja: "～を大目に見る" },
+        { en: "conducive", ja: "～に貢献する" },
+        { en: "conflagration", ja: "大火事" },
+        { en: "conjecture", ja: "推測" }
+    ];
+
+    // ==========================================
+    // アプリのロジック
+    // ==========================================
+    const TEST_LENGTH = 10; // 1回の出題数
+    let questions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let isAnswering = false;
+
+    // シャッフル関数
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startTest() {
+        document.getElementById('game-view').style.display = 'block';
+        document.getElementById('result-view').style.display = 'none';
+        
+        // 全リストからランダムに10問選ぶ
+        questions = shuffle([...wordList]).slice(0, TEST_LENGTH);
+        currentIdx = 0;
+        score = 0;
+        
+        showQuestion();
+    }
+
+    function showQuestion() {
+        isAnswering = true;
+        const q = questions[currentIdx];
+        
+        // UI更新
+        document.getElementById('status-text').textContent = `${currentIdx + 1} / ${TEST_LENGTH}`;
+        document.getElementById('progress-bar').style.width = `${(currentIdx / TEST_LENGTH) * 100}%`;
+        document.getElementById('question-word').textContent = q.en;
+        // 品詞推定（簡易的）
+        document.getElementById('pos-label').textContent = estimatePos(q.ja);
+
+        // 選択肢生成（正解1 + 不正解3）
+        // 不正解は「現在の正解以外のリスト」からランダムに選ぶ（同じレベルの単語が出るように）
+        const others = wordList.filter(w => w.en !== q.en);
+        const distractors = shuffle(others).slice(0, 3);
+        const options = shuffle([q, ...distractors]);
+
+        const container = document.getElementById('options-area');
+        container.innerHTML = '';
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt.ja;
+            btn.onclick = () => handleAnswer(opt, q, btn, container);
+            container.appendChild(btn);
+        });
+    }
+
+    function estimatePos(jaText) {
+        if (jaText.endsWith("する") || jaText.endsWith("く")) return "Verb (動詞)";
+        if (jaText.endsWith("な") || jaText.endsWith("の") || jaText.endsWith("い")) return "Adj (形容詞)";
+        return "Noun (名詞) / Other";
+    }
+
+    function handleAnswer(selected, correct, btn, container) {
+        if (!isAnswering) return;
+        isAnswering = false;
+
+        const btns = container.querySelectorAll('.option-btn');
+
+        if (selected.en === correct.en) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            // 正解を教える
+            btns.forEach(b => {
+                if (b.textContent === correct.ja) {
+                    b.classList.add('correct');
+                }
+            });
+        }
+
+        setTimeout(() => {
+            currentIdx++;
+            if (currentIdx < TEST_LENGTH) {
+                showQuestion();
+            } else {
+                endTest();
+            }
+        }, 1200); // 1.2秒後に次へ
+    }
+
+    function endTest() {
+        document.getElementById('game-view').style.display = 'none';
+        document.getElementById('result-view').style.display = 'block';
+        document.getElementById('progress-bar').style.width = '100%';
+
+        const percentage = Math.round((score / TEST_LENGTH) * 100);
+        document.getElementById('final-score').textContent = `${score} / ${TEST_LENGTH}`;
+        
+        let msg = "";
+        if (percentage === 100) msg = "Perfect! 英検1級合格レベルです！🏆";
+        else if (percentage >= 80) msg = "Excellent! 素晴らしい語彙力です。";
+        else if (percentage >= 60) msg = "Good! その調子で続けましょう。";
+        else msg = "Keep trying! 繰り返しが力になります。";
+        
+        document.getElementById('feedback-text').textContent = msg;
+    }
+
+    // 初回起動
+    startTest();
+
+</script>
+</body>
+</html>
