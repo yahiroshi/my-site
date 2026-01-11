@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キッズタイピング</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #E0F7FA;
+            --main-color: #4DD0E1;
+            --text-color: #333;
+            --accent-pink: #FF80AB;
+            /* 画像に合わせた指の色定義 */
+            --finger-blue: #81D4FA;   /* 左人差し指 */
+            --finger-pink: #F48FB1;   /* 右人差し指 */
+            --finger-green: #A5D6A7;  /* 中指 */
+            --finger-yellow: #FFF59D; /* 薬指 */
+            --finger-orange: #FFAB91; /* 小指 */
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+            padding-bottom: 50px; /* 下部の余白 */
+        }
+
+        h1 {
+            color: var(--main-color);
+            font-size: 2.5rem;
+            margin: 20px 0;
+            text-shadow: 2px 2px #fff;
+        }
+
+        /* メニュー画面 */
+        #menu-screen {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .level-btn {
+            display: block;
+            width: 280px;
+            margin: 20px auto;
+            padding: 20px;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 50px;
+            background: white;
+            box-shadow: 0 8px 0 #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s, box-shadow 0.1s;
+            color: var(--main-color);
+        }
+
+        .level-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #ddd;
+        }
+
+        /* ゲーム画面 */
+        #game-screen {
+            display: none;
+            width: 90%;
+            max-width: 850px; /* 全体の幅を少し広げました */
+            text-align: center;
+            position: relative;
+        }
+
+        /* 単語表示エリア */
+        .word-display {
+            font-size: 5rem;
+            margin: 20px 0;
+            letter-spacing: 5px;
+            background: white;
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            min-height: 120px;
+        }
+
+        .char-correct { color: #ccc; }
+        .char-current { color: var(--main-color); text-decoration: underline; }
+        .char-future { color: #333; }
+
+        /* --- 変更点ここから --- */
+
+        /* 今押すべき指の色を表示するバー */
+        .finger-indicator {
+            margin-top: 10px;
+            font-size: 1.5rem;
+            padding: 15px; /* パディングを少し増やしました */
+            border-radius: 20px; /* 角丸を少し大きく */
+            font-weight: bold;
+            color: #555;
+            background: #eee;
+            border: 5px solid transparent; /* 枠線を少し太く */
+            
+            /* 横幅を合わせて広げる設定 */
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        /* ヒント画像エリア */
+        .hint-container {
+            margin-top: 15px; /* 上のバーとの隙間を調整 */
+            position: relative;
+            background: white;
+            padding: 15px; /* パディングを少し増やしました */
+            border-radius: 25px; /* 角丸を少し大きく */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            
+            /* 横幅を合わせて広げる設定 */
+            display: block; /* inline-blockから変更 */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .hint-image {
+            width: 100%; /* 画像をコンテナ幅いっぱいに広げる */
+            height: auto;
+            border-radius: 15px;
+            display: block;
+        }
+
+        /* --- 変更点ここまで --- */
+
+        /* コントロールボタン */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .small-btn {
+            background: #fff;
+            border: 2px solid #ccc;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .small-btn:hover { background: #f0f0f0; }
+
+        /* 結果画面 */
+        #result-msg {
+            font-size: 2rem;
+            color: var(--accent-pink);
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 100;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        /* アニメーション */
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .bounce { animation: bounce 0.3s; }
+
+    </style>
+</head>
+<body>
+
+    <h1>🐰 キッズ タイピング 🐻</h1>
+
+    <div id="menu-screen">
+        <button class="level-btn" onclick="startGame(1)">レベル1：A B C<br><small>（1もじ）</small></button>
+        <button class="level-btn" onclick="startGame(2)">レベル2：CAT DOG<br><small>（かんたん）</small></button>
+        <button class="level-btn" onclick="startGame(3)">レベル3：LION APPLE<br><small>（すこしながい）</small></button>
+    </div>
+
+    <div id="game-screen">
+        
+        <div class="controls">
+            <button class="small-btn" onclick="toggleHint()">ヒント図 ON/OFF</button>
+            <button class="small-btn" onclick="backToMenu()">やめる</button>
+        </div>
+
+        <div class="word-display" id="word-display">Waiting...</div>
+
+        <div id="finger-msg" class="finger-indicator">
+            ここをみてね！
+        </div>
+
+        <div id="hint-box" class="hint-container">
+            <img src="images-2.jpeg" alt="キーボードの指配置図" class="hint-image">
+        </div>
+
+    </div>
+
+    <div id="result-msg">
+        やったね！ぜんぶクリア！🎉<br>
+        <button class="level-btn" onclick="backToMenu()" style="margin-top:20px;">もどる</button>
+    </div>
+
+<script>
+    // --- 音声機能 (Web Audio API) ---
+    let audioCtx;
+    function playSound(type) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(1800, now + 0.1);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        }
+    }
+
+    // --- データ設定 ---
+    const levels = {
+        1: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
+        2: ["CAT", "DOG", "MOM", "DAD", "SUN", "RED", "FOX", "BOX", "ANT", "PIG", "EGG"],
+        3: ["LION", "BEAR", "MILK", "BLUE", "PINK", "BIRD", "FISH", "JUMP", "BOOK", "TREE"]
+    };
+
+    const keyMap = {
+        '1': 'orange', 'q': 'orange', 'a': 'orange', 'z': 'orange',
+        '2': 'yellow', 'w': 'yellow', 's': 'yellow', 'x': 'yellow',
+        '3': 'green', 'e': 'green', 'd': 'green', 'c': 'green',
+        '4': 'blue', 'r': 'blue', 'f': 'blue', 'v': 'blue',
+        '5': 'blue', 't': 'blue', 'g': 'blue', 'b': 'blue',
+        '6': 'pink', 'y': 'pink', 'h': 'pink', 'n': 'pink',
+        '7': 'pink', 'u': 'pink', 'j': 'pink', 'm': 'pink',
+        '8': 'green', 'i': 'green', 'k': 'green', ',': 'green',
+        '9': 'yellow', 'o': 'yellow', 'l': 'yellow', '.': 'yellow',
+        '0': 'orange', 'p': 'orange', ';': 'orange', '/': 'orange', '-': 'orange'
+    };
+
+    const colorNames = {
+        'orange': 'オレンジ色のゆび（こゆび）',
+        'yellow': 'きいろのゆび（くすりゆび）',
+        'green': 'みどりのゆび（なかゆび）',
+        'blue': 'みずいろのゆび（ひとさしゆび）',
+        'pink': 'ピンクのゆび（ひとさしゆび）'
+    };
+
+    const colorCodes = {
+        'orange': '#FFAB91',
+        'yellow': '#FFF59D',
+        'green': '#A5D6A7',
+        'blue': '#81D4FA',
+        'pink': '#F48FB1'
+    };
+
+    // --- ゲーム状態 ---
+    let currentLevel = 1;
+    let wordList = [];
+    let currentWord = "";
+    let charIndex = 0;
+
+    // --- 要素取得 ---
+    const menuScreen = document.getElementById('menu-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const wordDisplay = document.getElementById('word-display');
+    const resultMsg = document.getElementById('result-msg');
+    const hintBox = document.getElementById('hint-box');
+    const fingerMsg = document.getElementById('finger-msg');
+
+    // --- ゲーム開始 ---
+    function startGame(level) {
+        currentLevel = level;
+        wordList = [...levels[level]].sort(() => Math.random() - 0.5).slice(0, 5);
+        
+        menuScreen.style.display = 'none';
+        gameScreen.style.display = 'block';
+        resultMsg.style.display = 'none';
+        
+        nextWord();
+    }
+
+    // --- 次の単語へ ---
+    function nextWord() {
+        if (wordList.length === 0) {
+            gameClear();
+            return;
+        }
+        currentWord = wordList.pop();
+        charIndex = 0;
+        updateDisplay();
+    }
+
+    // --- 画面描画 ---
+    function updateDisplay() {
+        let html = "";
+        for (let i = 0; i < currentWord.length; i++) {
+            const char = currentWord[i];
+            if (i < charIndex) {
+                html += `<span class="char-correct">${char}</span>`;
+            } else if (i === charIndex) {
+                html += `<span class="char-current">${char}</span>`;
+                updateHint(char);
+            } else {
+                html += `<span class="char-future">${char}</span>`;
+            }
+        }
+        wordDisplay.innerHTML = html;
+    }
+
+    // --- ヒント表示 ---
+    function updateHint(char) {
+        const lowerChar = char.toLowerCase();
+        const colorKey = keyMap[lowerChar];
+        
+        if (colorKey) {
+            fingerMsg.style.borderColor = colorCodes[colorKey];
+            fingerMsg.style.backgroundColor = colorCodes[colorKey] + "44";
+            fingerMsg.innerText = `次は「${char}」！ ${colorNames[colorKey]} だよ`;
+        } else {
+            fingerMsg.style.borderColor = "#ccc";
+            fingerMsg.innerText = `「${char}」をおしてね`;
+        }
+    }
+
+    // --- キー入力処理 ---
+    document.addEventListener('keydown', (e) => {
+        if (gameScreen.style.display === 'none') return;
+        if (wordList.length === 0 && charIndex >= currentWord.length) return;
+
+        const key = e.key.toUpperCase();
+        const target = currentWord[charIndex].toUpperCase();
+
+        if (key.length > 1) return;
+
+        if (key === target) {
+            playSound('correct');
+            charIndex++;
+            
+            wordDisplay.classList.remove('bounce');
+            void wordDisplay.offsetWidth;
+            wordDisplay.classList.add('bounce');
+
+            if (charIndex >= currentWord.length) {
+                updateDisplay();
+                setTimeout(nextWord, 500);
+            } else {
+                updateDisplay();
+            }
+        } else {
+            playSound('wrong');
+        }
+    });
+
+    // --- その他の機能 ---
+    function toggleHint() {
+        if (hintBox.style.display === 'none') {
+            hintBox.style.display = 'block'; // inline-blockから変更
+        } else {
+            hintBox.style.display = 'none';
+        }
+    }
+
+    function gameClear() {
+        playSound('correct');
+        resultMsg.style.display = 'block';
+    }
+
+    function backToMenu() {
+        menuScreen.style.display = 'block';
+        gameScreen.style.display = 'none';
+        resultMsg.style.display = 'none';
+    }
+
+</script>
+</body>
+</html>
