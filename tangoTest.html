@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Vocabulary Test</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #50e3c2;
+            --accent: #ff6b6b;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        h1, h2 { text-align: center; margin-bottom: 20px; color: var(--primary); }
+
+        /* --- 画面切り替え用 --- */
+        .screen { display: none; animation: fadeIn 0.5s; }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 設定画面 --- */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .range-inputs { display: flex; gap: 10px; align-items: center; }
+        .range-inputs input { width: 45%; }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            color: white;
+            background: linear-gradient(135deg, var(--primary), #357abd);
+        }
+        .btn:active { transform: scale(0.98); }
+
+        /* --- テスト画面 --- */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #888;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .word-display {
+            font-size: 2.5rem;
+            text-align: center;
+            font-weight: 800;
+            margin: 30px 0;
+            color: #2c3e50;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .option-btn {
+            background: #fff;
+            border: 2px solid #eee;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            color: #555;
+        }
+        .option-btn:hover { border-color: var(--primary); background: #f0f8ff; }
+        
+        /* 選択済みスタイル (正誤は表示しない) */
+        .option-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* --- インターバル画面 --- */
+        .interim-message {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        /* --- 結果画面 --- */
+        .result-header { text-align: center; margin-bottom: 30px; }
+        .score-big { font-size: 3rem; font-weight: bold; color: var(--accent); }
+        
+        .stats-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-row:last-child { border: none; margin: 0; padding: 0; }
+
+        .bar-chart-container { margin-top: 20px; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .bar-label { width: 60px; font-size: 0.9rem; font-weight: bold; }
+        .bar-area { flex: 1; background: #eee; height: 20px; border-radius: 10px; overflow: hidden; position: relative; }
+        .bar-fill {
+            height: 100%;
+            background: var(--secondary);
+            width: 0%; /* JSでアニメーション */
+            transition: width 1s ease-out;
+            border-radius: 10px;
+        }
+        .bar-value { margin-left: 10px; font-weight: bold; width: 40px; }
+
+        /* 紙吹雪用キャンバス */
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="container">
+    
+    <div id="setup-screen" class="screen active">
+        <h1>単語テスト設定</h1>
+        
+        <div class="form-group">
+            <label>出題範囲 (単語 No.)</label>
+            <div class="range-inputs">
+                <input type="number" id="start-index" value="1" min="1">
+                <span>〜</span>
+                <input type="number" id="end-index" value="100" min="1">
+            </div>
+            <small style="color:#888;">※最大収録数: <span id="max-words-count">0</span>語</small>
+        </div>
+
+        <div class="form-group">
+            <label>1回の問題数</label>
+            <select id="question-count">
+                <option value="10">10問</option>
+                <option value="20">20問</option>
+                <option value="50">50問</option>
+                <option value="100">100問</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>テスト回数 (セット数)</label>
+            <select id="round-count">
+                <option value="1">1回 (一発勝負)</option>
+                <option value="2">2回</option>
+                <option value="3">3回</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="startApp()">テスト開始</button>
+    </div>
+
+    <div id="test-screen" class="screen">
+        <div class="header-info">
+            <span id="round-indicator">Round 1</span>
+            <span id="progress-indicator">1 / 10</span>
+        </div>
+        
+        <div class="word-display" id="question-text">Word</div>
+        
+        <div class="options-grid" id="options-container">
+            </div>
+    </div>
+
+    <div id="interval-screen" class="screen">
+        <div class="interim-message">
+            <h2>お疲れ様でした！</h2>
+            <p>第 <span id="finished-round-num">1</span> 回目のテストが終了しました。</p>
+            <br>
+            <button class="btn" onclick="nextRound()">次の回へ進む</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="result-header">
+            <h2>最終結果</h2>
+            <div style="font-size: 1rem; color:#666;">平均点</div>
+            <div class="score-big"><span id="average-score">0</span><span style="font-size:1.5rem">点</span></div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-row">
+                <span>出題範囲</span>
+                <span id="res-range">No.1 - 100</span>
+            </div>
+            <div class="stat-row">
+                <span>問題数</span>
+                <span id="res-q-count">10問</span>
+            </div>
+             <div class="stat-row">
+                <span>実施回数</span>
+                <span id="res-rounds">3回</span>
+            </div>
+        </div>
+
+        <h3>スコア詳細</h3>
+        <div class="bar-chart-container" id="score-chart">
+            </div>
+
+        <div style="margin-top: 30px;">
+            <button class="btn" onclick="location.reload()">設定に戻る</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ==========================================
+    // データ: ここに単語リストを流し込んでください
+    // 現在はデモ用にダミーデータを作成しています
+    // ==========================================
+    
+    // ユーザー様が後でここに実際のデータを挿入してください。
+    // 形式: { en: "english", ja: "日本語" }
+    let wordList = [];
+
+    // --- 【デモ用】データ生成ロジック (後で削除してOK) ---
+    // テスト動作確認用にNo.1〜1000までのダミーを作っておきます
+    // 実際は先ほど作成したリストなどをここにペーストしてください。
+    /*
+        例:
+        wordList = [
+            { en: "supply", ja: "～を供給する" },
+            { en: "gain", ja: "～を得る、増す" },
+            ...
+        ];
+    */
+    // とりあえず1000個のプレースホルダーを作ります（実際には上書きしてください）
+    for (let i = 1; i <= 1000; i++) {
+        wordList.push({ en: `Word-${i}`, ja: `単語の意味-${i}` });
+    }
+    // ----------------------------------------------------
+
+
+    // ==========================================
+    // アプリの状態管理
+    // ==========================================
+    let config = {
+        start: 1,
+        end: 100,
+        qCount: 10,
+        rounds: 1
+    };
+    
+    let state = {
+        currentRound: 1,
+        scores: [], // 各ラウンドのスコア
+        currentQuestions: [],
+        currentQIndex: 0,
+        currentCorrectCount: 0
+    };
+
+    // 初期化
+    document.getElementById('max-words-count').textContent = wordList.length;
+    document.getElementById('end-index').value = Math.min(100, wordList.length);
+
+    // ==========================================
+    // 画面遷移・ロジック
+    // ==========================================
+
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function startApp() {
+        // 設定読み込み
+        const start = parseInt(document.getElementById('start-index').value);
+        const end = parseInt(document.getElementById('end-index').value);
+        const qCount = parseInt(document.getElementById('question-count').value);
+        const rounds = parseInt(document.getElementById('round-count').value);
+
+        // バリデーション
+        if (isNaN(start) || isNaN(end) || start < 1 || end > wordList.length || start > end) {
+            alert(`範囲は 1 〜 ${wordList.length} の間で正しく設定してください。`);
+            return;
+        }
+        if ((end - start + 1) < qCount) {
+            alert("指定した範囲の単語数が、出題数より少ないです。範囲を広げるか、問題数を減らしてください。");
+            return;
+        }
+
+        config = { start, end, qCount, rounds };
+        state = {
+            currentRound: 1,
+            scores: [],
+            currentQuestions: [],
+            currentQIndex: 0,
+            currentCorrectCount: 0
+        };
+
+        prepareRound();
+    }
+
+    // ラウンドの準備
+    function prepareRound() {
+        // 範囲内の単語を抽出
+        // wordListは0始まりなので、No.1はindex 0
+        const targetWords = wordList.slice(config.start - 1, config.end);
+        
+        // シャッフルして出題数分取得
+        const questions = shuffle([...targetWords]).slice(0, config.qCount);
+        
+        state.currentQuestions = questions;
+        state.currentQIndex = 0;
+        state.currentCorrectCount = 0;
+
+        showTestScreen();
+    }
+
+    function showTestScreen() {
+        switchScreen('test-screen');
+        updateQuestionUI();
+    }
+
+    function updateQuestionUI() {
+        const q = state.currentQuestions[state.currentQIndex];
+        
+        // ヘッダー更新
+        document.getElementById('round-indicator').textContent = `Round ${state.currentRound} / ${config.rounds}`;
+        document.getElementById('progress-indicator').textContent = `${state.currentQIndex + 1} / ${config.qCount}`;
+        
+        // 問題表示
+        document.getElementById('question-text').textContent = q.en;
+
+        // 選択肢生成 (正解1 + ダミー3)
+        // ダミーは今回の範囲(config.start~end)の全体リストから選ぶ
+        const rangeWords = wordList.slice(config.start - 1, config.end);
+        const distractors = rangeWords.filter(w => w.en !== q.en);
+        const wrongOptions = shuffle(distractors).slice(0, 3);
+        const options = shuffle([q, ...wrongOptions]);
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt.ja;
+            btn.onclick = () => submitAnswer(opt, q, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function submitAnswer(selected, correct, btn) {
+        // ボタン連打防止
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => b.disabled = true);
+        
+        btn.classList.add('selected');
+
+        // 正解判定 (UIには出さない、裏で集計)
+        if (selected.en === correct.en) {
+            state.currentCorrectCount++;
+        }
+
+        // 少し待って次へ
+        setTimeout(() => {
+            state.currentQIndex++;
+            if (state.currentQIndex < config.qCount) {
+                updateQuestionUI();
+            } else {
+                finishRound();
+            }
+        }, 400); // サクサク進むように短めに
+    }
+
+    function finishRound() {
+        // 点数計算 (100点満点換算)
+        const rawScore = state.currentCorrectCount;
+        const totalQ = config.qCount;
+        const score100 = Math.round((rawScore / totalQ) * 100);
+        
+        state.scores.push(score100);
+
+        if (state.currentRound < config.rounds) {
+            // 次のラウンドがある場合
+            document.getElementById('finished-round-num').textContent = state.currentRound;
+            switchScreen('interval-screen');
+        } else {
+            // 全ラウンド終了
+            showResultScreen();
+        }
+    }
+
+    function nextRound() {
+        state.currentRound++;
+        prepareRound();
+    }
+
+    // ==========================================
+    // 結果画面処理
+    // ==========================================
+    function showResultScreen() {
+        switchScreen('result-screen');
+        fireConfetti(); // ワクワク演出
+
+        // 統計表示
+        const avg = Math.round(state.scores.reduce((a, b) => a + b, 0) / state.scores.length);
+        document.getElementById('average-score').textContent = avg;
+        
+        document.getElementById('res-range').textContent = `No.${config.start} - ${config.end}`;
+        document.getElementById('res-q-count').textContent = `${config.qCount}問`;
+        document.getElementById('res-rounds').textContent = `${config.rounds}回`;
+
+        // グラフ生成
+        const chartContainer = document.getElementById('score-chart');
+        chartContainer.innerHTML = '';
+
+        state.scores.forEach((sc, idx) => {
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+            
+            row.innerHTML = `
+                <div class="bar-label">${idx + 1}回目</div>
+                <div class="bar-area">
+                    <div class="bar-fill" style="width: 0%" data-width="${sc}%"></div>
+                </div>
+                <div class="bar-value">${sc}</div>
+            `;
+            chartContainer.appendChild(row);
+        });
+
+        // アニメーション発火 (DOM描画後にwidthを設定)
+        setTimeout(() => {
+            document.querySelectorAll('.bar-fill').forEach(el => {
+                el.style.width = el.getAttribute('data-width');
+                // 点数によって色を変える
+                const w = parseInt(el.getAttribute('data-width'));
+                if(w < 60) el.style.backgroundColor = '#ff6b6b'; // 赤
+                else if(w < 80) el.style.backgroundColor = '#feca57'; // 黄色
+                else el.style.backgroundColor = '#50e3c2'; // 緑
+            });
+        }, 100);
+    }
+
+
+    // ==========================================
+    // ユーティリティ
+    // ==========================================
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // ==========================================
+    // 紙吹雪エフェクト (簡易版)
+    // ==========================================
+    function fireConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#ff6b6b', '#50e3c2', '#4a90e2', '#feca57', '#ff9ff3'];
+
+        for(let i=0; i<100; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 10 + 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speed: Math.random() * 3 + 2,
+                angle: Math.random() * 360
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let active = false;
+            
+            particles.forEach(p => {
+                p.y += p.speed;
+                p.angle += 2;
+                if(p.y < canvas.height) {
+                    active = true;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.angle * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    ctx.restore();
+                }
+            });
+
+            if(active) requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+</script>
+
+</body>
+</html>
