@@ -2,119 +2,239 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>RLC交流回路シミュレーター</title>
+    <title>RLC交流回路 プロ・シミュレーター</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f0f4f8; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        canvas { border: 1px solid #ccc; background-color: #222; display: block; margin-bottom: 20px; }
-        .controls { display: grid; grid-template-columns: 150px 1fr 50px; gap: 15px; align-items: center; }
-        .legend { margin-bottom: 10px; font-weight: bold; }
-        .legend span.v { color: #ff4d4d; }
-        .legend span.i { color: #4da6ff; }
-        .info { margin-top: 20px; padding: 15px; background: #e6f2ff; border-radius: 5px; font-family: monospace; font-size: 16px;}
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        
+        .canvas-wrapper { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+        .canvas-container { flex: 1; min-width: 360px; }
+        canvas { border: 1px solid #d1d9e0; background-color: #1a1a1a; border-radius: 8px; display: block; width: 100%; height: auto; }
+        
+        .legend { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #d1d9e0; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; font-size: 14px;}
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 18px; height: 18px; border-radius: 4px; }
+        .thick-line { height: 4px; width: 24px;}
+
+        .controls-panel { background: #f9fbfd; padding: 25px; border-radius: 8px; border: 1px solid #d1d9e0; }
+        .controls-grid { display: grid; grid-template-columns: 180px 1fr 60px; gap: 15px 20px; align-items: center; }
+        label { font-weight: bold; color: #444; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .val-display { font-family: monospace; font-size: 16px; color: #007bff; text-align: right;}
+
+        .info-box { margin-top: 25px; padding: 20px; background: #e6f2ff; border-radius: 8px; border: 1px solid #b3d7ff; font-family: monospace; font-size: 15px; line-height: 1.6; color: #004085;}
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>RLC交流回路 波形シミュレーター</h2>
-        <div class="legend">
-            <span class="v">■ 電圧 V(t)</span> / <span class="i">■ 電流 I(t)</span>
-        </div>
-        <canvas id="waveCanvas" width="760" height="300"></canvas>
+        <h2>RLC交流回路 プロ・シミュレーター</h2>
         
-        <div class="controls">
-            <label>抵抗 R (Ω):</label>
-            <input type="range" id="R" min="10" max="200" value="50">
-            <span id="R_val">50</span>
-
-            <label>自己インダクタンス L (mH):</label>
-            <input type="range" id="L" min="10" max="200" value="100">
-            <span id="L_val">100</span>
-
-            <label>電気容量 C (μF):</label>
-            <input type="range" id="C" min="10" max="200" value="100">
-            <span id="C_val">100</span>
-
-            <label>角周波数 ω (rad/s):</label>
-            <input type="range" id="w" min="100" max="1000" value="316">
-            <span id="w_val">316</span>
+        <div class="legend">
+            <div class="legend-item"><div class="color-box thick-line" style="background-color: #4da6ff;"></div><span>電流 I(t) [太]</span></div>
+            <div class="legend-item"><div class="color-box" style="background-color: #ff4d4d;"></div><span>全体電圧 V(t)</span></div>
+            <div class="legend-item"><div class="color-box" style="background-color: #33cc33;"></div><span>抵抗電圧 V<sub>R</sub>(t)</span></div>
+            <div class="legend-item"><div class="color-box" style="background-color: #ff9933;"></div><span>コイル電圧 V<sub>L</sub>(t)</span></div>
+            <div class="legend-item"><div class="color-box" style="background-color: #cc66ff;"></div><span>コンデンサー電圧 V<sub>C</sub>(t)</span></div>
         </div>
 
-        <div class="info" id="infoBox"></div>
+        <div class="canvas-wrapper">
+            <div class="canvas-container">
+                <canvas id="waveCanvas" width="560" height="320"></canvas>
+            </div>
+            <div class="canvas-container">
+                <canvas id="vectorCanvas" width="320" height="320"></canvas>
+            </div>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="controls-grid">
+                <label>抵抗 R (Ω):</label>
+                <input type="range" id="R" min="10" max="200" value="100" oninput="draw()">
+                <span id="R_val" class="val-display">100</span>
+
+                <label>コイル L (mH):</label>
+                <input type="range" id="L" min="10" max="300" value="150" oninput="draw()">
+                <span id="L_val" class="val-display">150</span>
+
+                <label>コンデンサー C (μF):</label>
+                <input type="range" id="C" min="10" max="300" value="100" oninput="draw()">
+                <span id="C_val" class="val-display">100</span>
+
+                <label>角周波数 ω (rad/s):</label>
+                <input type="range" id="w" min="50" max="1500" value="258" oninput="draw()">
+                <span id="w_val" class="val-display">258</span>
+            </div>
+        </div>
+
+        <div class="info-box" id="infoBox"></div>
     </div>
 
     <script>
-        const canvas = document.getElementById('waveCanvas');
-        const ctx = canvas.getContext('2d');
-        let timeOffset = 0;
+        const waveCanvas = document.getElementById('waveCanvas');
+        const wCtx = waveCanvas.getContext('2d');
+        const vectorCanvas = document.getElementById('vectorCanvas');
+        const vCtx = vectorCanvas.getContext('2d');
 
-        function updateSimulation() {
-            // パラメータの取得と単位変換
+        // 色の定義
+        const COLORS = {
+            I: '#4da6ff', V: '#ff4d4d', VR: '#33cc33', VL: '#ff9933', VC: '#cc66ff',
+            Grid: '#444', Axis: '#888', Text: '#eee'
+        };
+
+        function draw() {
+            // パラメータ取得と単位変換
             const R = parseFloat(document.getElementById('R').value);
-            const L = parseFloat(document.getElementById('L').value) * 1e-3; // Hに変換
-            const C = parseFloat(document.getElementById('C').value) * 1e-6; // Fに変換
+            const L = parseFloat(document.getElementById('L').value) * 1e-3;
+            const C = parseFloat(document.getElementById('C').value) * 1e-6;
             const w = parseFloat(document.getElementById('w').value);
 
-            // 表示の更新
+            // 表示更新
             document.getElementById('R_val').innerText = R;
             document.getElementById('L_val').innerText = document.getElementById('L').value;
             document.getElementById('C_val').innerText = document.getElementById('C').value;
             document.getElementById('w_val').innerText = w;
 
-            // 物理量の計算
-            const XL = w * L;                  // 誘導性リアクタンス
-            const XC = 1 / (w * C);            // 容量性リアクタンス
-            const Z = Math.sqrt(R*R + Math.pow(XL - XC, 2)); // インピーダンス
-            const phi = Math.atan2(XL - XC, R); // 電圧に対する電流の位相の遅れ
+            // 物理計算
+            const XL = w * L;                  
+            const XC = 1 / (w * C);            
+            const X = XL - XC;                 // 合成リアクタンス
+            const Z = Math.sqrt(R*R + X*X);    // インピーダンス
+            const phi = Math.atan2(X, R);      // 電圧に対する電流の位相差（遅れ）
             
             const w0 = 1 / Math.sqrt(L * C);   // 共振角周波数
+            const V0 = 100;                    // 電圧最大値（固定）
+            const I0 = V0 / Z;                 // 電流最大値
 
-            // 情報の表示
+            // 各要素の電圧最大値
+            const VR0 = R * I0;
+            const VL0 = XL * I0;
+            const VC0 = XC * I0;
+
+            // 情報表示
+            const phaseDeg = (phi * 180 / Math.PI).toFixed(1);
+            let phaseStr = phaseDeg > 0 ? `電流が ${phaseDeg}° 遅れる（誘導性）` : 
+                           phaseDeg < 0 ? `電流が ${Math.abs(phaseDeg)}° 進む（容量性）` : `同位相（共振）`;
+            
             document.getElementById('infoBox').innerHTML = 
-                `インピーダンス Z = ${Z.toFixed(1)} Ω<br>` +
-                `位相差 φ = ${(phi * 180 / Math.PI).toFixed(1)}° (正なら電流が遅れ、負なら進み)<br>` +
-                `現在の角周波数 ω = ${w.toFixed(0)} rad/s<br>` +
-                `共振角周波数 ω₀ = ${w0.toFixed(0)} rad/s`;
+                `インピーダンス Z = ${Z.toFixed(1)} Ω (R=${R}, X<sub>L</sub>=${XL.toFixed(1)}, X<sub>C</sub>=${XC.toFixed(1)})<br>` +
+                `位相差 φ = ${phaseStr}<br>` +
+                `角周波数 ω = ${w.toFixed(0)} rad/s / 共振角周波数 ω₀ = ${w0.toFixed(0)} rad/s`;
 
-            // 描画のクリア
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 中心線の描画
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height/2);
-            ctx.lineTo(canvas.width, canvas.height/2);
-            ctx.strokeStyle = '#555';
-            ctx.stroke();
-
-            // 波形の描画
-            const V0 = 100; // 電圧の描画用振幅
-            const I0 = (V0 / Z) * 40; // 電流の描画用スケール調整
-
-            for(let x = 0; x < canvas.width; x++) {
-                // 描画用の時間軸スケール
-                const t = timeOffset + x * 0.005; 
-                
-                // V(t) = V0 * sin(ωt)
-                const v = V0 * Math.sin(w * t * 0.02);
-                // I(t) = I0 * sin(ωt - φ)
-                const i = I0 * Math.sin(w * t * 0.02 - phi);
-
-                // 電圧プロット (赤)
-                ctx.fillStyle = '#ff4d4d';
-                ctx.fillRect(x, canvas.height/2 - v, 2, 2);
-                
-                // 電流プロット (青)
-                ctx.fillStyle = '#4da6ff';
-                ctx.fillRect(x, canvas.height/2 - i, 2, 2);
-            }
-            
-            // アニメーションを進める
-            timeOffset += 0.5;
-            requestAnimationFrame(updateSimulation);
+            // --- 描画ロジック ---
+            drawWaveforms(wCtx, waveCanvas, w, phi, I0, V0, VR0, VL0, VC0);
+            drawVectorDiagram(vCtx, vectorCanvas, phi, I0, V0, VR0, VL0, VC0);
         }
 
-        // シミュレーション開始
-        updateSimulation();
+        // 1. 波形グラフロジック（固定版）
+        function drawWaveforms(ctx, canvas, w, phi, I0, V0, VR0, VL0, VC0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // グリッドと軸
+            drawGraphBase(ctx, canvas);
+
+            const centerY = canvas.height / 2;
+            const scaleV = 1.2; // 電圧の描画スケール
+            const scaleI = 80;  // 電流の描画スケール
+
+            // 波形の描画
+            ctx.lineJoin = 'round';
+            for(let x = 0; x < canvas.width; x++) {
+                const t = x * 0.0001; // 時間軸（固定）
+                
+                // V(t) = V0 * sin(ωt) を基準にする
+                const phase_wt = w * t * 20; // 描画用に周波数を調整
+                
+                const v = V0 * Math.sin(phase_wt);
+                const i = I0 * Math.sin(phase_wt - phi); // 電流はφ遅れる
+                const vR = VR0 * Math.sin(phase_wt - phi);
+                const vL = VL0 * Math.sin(phase_wt - phi + Math.PI/2); // VLはIより90度進む
+                const vC = VC0 * Math.sin(phase_wt - phi - Math.PI/2); // VCはIより90度遅れる
+
+                drawPoint(ctx, x, centerY - v / scaleV, COLORS.V, 1);
+                drawPoint(ctx, x, centerY - vR / scaleV, COLORS.VR, 1);
+                drawPoint(ctx, x, centerY - vL / scaleV, COLORS.VL, 1);
+                drawPoint(ctx, x, centerY - vC / scaleV, COLORS.VC, 1);
+                drawPoint(ctx, x, centerY - i * scaleI, COLORS.I, 3); // 電流は太く
+            }
+        }
+
+        // 2. ベクトル図ロジック
+        function drawVectorDiagram(ctx, canvas, phi, I0, V0, VR0, VL0, VC0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const cX = canvas.width / 2;
+            const cY = canvas.height / 2;
+
+            // 軸の描画
+            ctx.beginPath();
+            ctx.moveTo(0, cY); ctx.lineTo(canvas.width, cY);
+            ctx.moveTo(cX, 0); ctx.lineTo(cX, canvas.height);
+            ctx.strokeStyle = COLORS.Grid;
+            ctx.stroke();
+
+            // 描画スケールの調整（VR0, VL0, VC0の最大値に合わせる）
+            const maxV = Math.max(VR0, VL0, VC0, V0, 1);
+            const scale = (cX - 20) / maxV;
+
+            // 電流 I を基準（右向き）にする
+            const vecI0 = 60; // 電流ベクトルの描画長（固定）
+            
+            // ベクトルの描画
+            drawArrow(ctx, cX, cY, cX + vecI0, cY, COLORS.I, 4);          // I (基準)
+            drawArrow(ctx, cX, cY, cX + VR0 * scale, cY, COLORS.VR, 2);   // VR (Iと同位相)
+            drawArrow(ctx, cX, cY, cX, cY - VL0 * scale, COLORS.VL, 2);   // VL (Iより90度進む)
+            drawArrow(ctx, cX, cY, cX, cY + VC0 * scale, COLORS.VC, 2);   // VC (Iより90度遅れる)
+            
+            // 全体電圧 V (Iよりφ進む。φが負なら遅れる)
+            // atan2(X,R)で求めたφは「Vに対するIの遅れ」なので、I基準ならVの位相は +φ
+            const Vx = V0 * Math.cos(phi) * scale;
+            const Vy = -V0 * Math.sin(phi) * scale; // CanvasはY軸下向きが正のため符号反転
+            drawArrow(ctx, cX, cY, cX + Vx, cY + Vy, COLORS.V, 3);        // V
+
+            // ラベル
+            ctx.fillStyle = COLORS.Text; ctx.font = '14px monospace';
+            ctx.fillText('I', cX + vecI0 + 5, cY - 5);
+            ctx.fillText('VR', cX + VR0 * scale - 20, cY + 15);
+            ctx.fillText('VL', cX + 5, cY - VL0 * scale + 15);
+            ctx.fillText('VC', cX + 5, cY + VC0 * scale - 5);
+            ctx.fillStyle = COLORS.V; ctx.fillText('V', cX + Vx + 5, cY + Vy - 5);
+        }
+
+        // --- 描画補助関数 ---
+        function drawGraphBase(ctx, canvas) {
+            const centerY = canvas.height / 2;
+            ctx.beginPath();
+            for(let y = 0; y < canvas.height; y += 40) {
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+            }
+            ctx.strokeStyle = COLORS.Grid; ctx.lineWidth = 0.5; ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY);
+            ctx.strokeStyle = COLORS.Axis; ctx.lineWidth = 1; ctx.stroke();
+        }
+
+        function drawPoint(ctx, x, y, color, size) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        }
+
+        function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+            const headlen = 10;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fillStyle = color; ctx.fill();
+        }
+
+        // 初期描画
+        draw();
     </script>
 </body>
 </html>
