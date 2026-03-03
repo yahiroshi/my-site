@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>RLC交流回路シミュレーター</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f4f8; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        canvas { border: 1px solid #ccc; background-color: #222; display: block; margin-bottom: 20px; }
+        .controls { display: grid; grid-template-columns: 150px 1fr 50px; gap: 15px; align-items: center; }
+        .legend { margin-bottom: 10px; font-weight: bold; }
+        .legend span.v { color: #ff4d4d; }
+        .legend span.i { color: #4da6ff; }
+        .info { margin-top: 20px; padding: 15px; background: #e6f2ff; border-radius: 5px; font-family: monospace; font-size: 16px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>RLC交流回路 波形シミュレーター</h2>
+        <div class="legend">
+            <span class="v">■ 電圧 V(t)</span> / <span class="i">■ 電流 I(t)</span>
+        </div>
+        <canvas id="waveCanvas" width="760" height="300"></canvas>
+        
+        <div class="controls">
+            <label>抵抗 R (Ω):</label>
+            <input type="range" id="R" min="10" max="200" value="50">
+            <span id="R_val">50</span>
+
+            <label>自己インダクタンス L (mH):</label>
+            <input type="range" id="L" min="10" max="200" value="100">
+            <span id="L_val">100</span>
+
+            <label>電気容量 C (μF):</label>
+            <input type="range" id="C" min="10" max="200" value="100">
+            <span id="C_val">100</span>
+
+            <label>角周波数 ω (rad/s):</label>
+            <input type="range" id="w" min="100" max="1000" value="316">
+            <span id="w_val">316</span>
+        </div>
+
+        <div class="info" id="infoBox"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        let timeOffset = 0;
+
+        function updateSimulation() {
+            // パラメータの取得と単位変換
+            const R = parseFloat(document.getElementById('R').value);
+            const L = parseFloat(document.getElementById('L').value) * 1e-3; // Hに変換
+            const C = parseFloat(document.getElementById('C').value) * 1e-6; // Fに変換
+            const w = parseFloat(document.getElementById('w').value);
+
+            // 表示の更新
+            document.getElementById('R_val').innerText = R;
+            document.getElementById('L_val').innerText = document.getElementById('L').value;
+            document.getElementById('C_val').innerText = document.getElementById('C').value;
+            document.getElementById('w_val').innerText = w;
+
+            // 物理量の計算
+            const XL = w * L;                  // 誘導性リアクタンス
+            const XC = 1 / (w * C);            // 容量性リアクタンス
+            const Z = Math.sqrt(R*R + Math.pow(XL - XC, 2)); // インピーダンス
+            const phi = Math.atan2(XL - XC, R); // 電圧に対する電流の位相の遅れ
+            
+            const w0 = 1 / Math.sqrt(L * C);   // 共振角周波数
+
+            // 情報の表示
+            document.getElementById('infoBox').innerHTML = 
+                `インピーダンス Z = ${Z.toFixed(1)} Ω<br>` +
+                `位相差 φ = ${(phi * 180 / Math.PI).toFixed(1)}° (正なら電流が遅れ、負なら進み)<br>` +
+                `現在の角周波数 ω = ${w.toFixed(0)} rad/s<br>` +
+                `共振角周波数 ω₀ = ${w0.toFixed(0)} rad/s`;
+
+            // 描画のクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 中心線の描画
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height/2);
+            ctx.lineTo(canvas.width, canvas.height/2);
+            ctx.strokeStyle = '#555';
+            ctx.stroke();
+
+            // 波形の描画
+            const V0 = 100; // 電圧の描画用振幅
+            const I0 = (V0 / Z) * 40; // 電流の描画用スケール調整
+
+            for(let x = 0; x < canvas.width; x++) {
+                // 描画用の時間軸スケール
+                const t = timeOffset + x * 0.005; 
+                
+                // V(t) = V0 * sin(ωt)
+                const v = V0 * Math.sin(w * t * 0.02);
+                // I(t) = I0 * sin(ωt - φ)
+                const i = I0 * Math.sin(w * t * 0.02 - phi);
+
+                // 電圧プロット (赤)
+                ctx.fillStyle = '#ff4d4d';
+                ctx.fillRect(x, canvas.height/2 - v, 2, 2);
+                
+                // 電流プロット (青)
+                ctx.fillStyle = '#4da6ff';
+                ctx.fillRect(x, canvas.height/2 - i, 2, 2);
+            }
+            
+            // アニメーションを進める
+            timeOffset += 0.5;
+            requestAnimationFrame(updateSimulation);
+        }
+
+        // シミュレーション開始
+        updateSimulation();
+    </script>
+</body>
+</html>
