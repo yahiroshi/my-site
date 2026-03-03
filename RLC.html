@@ -76,7 +76,7 @@
         const vectorCanvas = document.getElementById('vectorCanvas');
         const vCtx = vectorCanvas.getContext('2d');
 
-        // 色の定義
+        // 色の定義（凡例と完全一致）
         const COLORS = {
             I: '#4da6ff', V: '#ff4d4d', VR: '#33cc33', VL: '#ff9933', VC: '#cc66ff',
             Grid: '#444', Axis: '#888', Text: '#eee'
@@ -103,8 +103,8 @@
             const phi = Math.atan2(X, R);      // 電圧に対する電流の位相差（遅れ）
             
             const w0 = 1 / Math.sqrt(L * C);   // 共振角周波数
-            const V0 = 100;                    // 電圧最大値（固定）
-            const I0 = V0 / Z;                 // 電流最大値
+            const V0 = 100;                    // 全体電圧の最大値（固定）
+            const I0 = V0 / Z;                 // 電流の最大値
 
             // 各要素の電圧最大値
             const VR0 = R * I0;
@@ -121,42 +121,57 @@
                 `位相差 φ = ${phaseStr}<br>` +
                 `角周波数 ω = ${w.toFixed(0)} rad/s / 共振角周波数 ω₀ = ${w0.toFixed(0)} rad/s`;
 
-            // --- 描画ロジック ---
+            // --- 描画実行 ---
             drawWaveforms(wCtx, waveCanvas, w, phi, I0, V0, VR0, VL0, VC0);
             drawVectorDiagram(vCtx, vectorCanvas, phi, I0, V0, VR0, VL0, VC0);
         }
 
-        // 1. 波形グラフロジック（固定版）
+        // 1. 波形グラフロジック（実線・固定版）
         function drawWaveforms(ctx, canvas, w, phi, I0, V0, VR0, VL0, VC0) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // グリッドと軸
-            drawGraphBase(ctx, canvas);
+            drawGraphBase(ctx, canvas); // グリッド描画
 
             const centerY = canvas.height / 2;
             const scaleV = 1.2; // 電圧の描画スケール
             const scaleI = 80;  // 電流の描画スケール
 
-            // 波形の描画
-            ctx.lineJoin = 'round';
-            for(let x = 0; x < canvas.width; x++) {
-                const t = x * 0.0001; // 時間軸（固定）
-                
-                // V(t) = V0 * sin(ωt) を基準にする
-                const phase_wt = w * t * 20; // 描画用に周波数を調整
-                
-                const v = V0 * Math.sin(phase_wt);
-                const i = I0 * Math.sin(phase_wt - phi); // 電流はφ遅れる
-                const vR = VR0 * Math.sin(phase_wt - phi);
-                const vL = VL0 * Math.sin(phase_wt - phi + Math.PI/2); // VLはIより90度進む
-                const vC = VC0 * Math.sin(phase_wt - phi - Math.PI/2); // VCはIより90度遅れる
+            // 波形を描画する共通関数（実線）
+            function drawSolidLine(color, lineWidth, calcYFunction) {
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineJoin = 'round'; // 線のつなぎ目を滑らかに
 
-                drawPoint(ctx, x, centerY - v / scaleV, COLORS.V, 1);
-                drawPoint(ctx, x, centerY - vR / scaleV, COLORS.VR, 1);
-                drawPoint(ctx, x, centerY - vL / scaleV, COLORS.VL, 1);
-                drawPoint(ctx, x, centerY - vC / scaleV, COLORS.VC, 1);
-                drawPoint(ctx, x, centerY - i * scaleI, COLORS.I, 3); // 電流は太く
+                for(let x = 0; x <= canvas.width; x++) {
+                    const t = x * 0.0001; // 時間軸（固定）
+                    const phase_wt = w * t * 20; // 描画用に周波数を調整
+                    const y = centerY - calcYFunction(phase_wt);
+                    
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
             }
+
+            // 各波形を実線で描画（凡例の色と一致）
+            
+            // 全体電圧 V (赤) : V = V0 * sin(ωt)
+            drawSolidLine(COLORS.V, 1.5, (wt) => (V0 * Math.sin(wt)) / scaleV);
+            
+            // 抵抗電圧 VR (緑) : VR = VR0 * sin(ωt - φ)  ※電流と同位相
+            drawSolidLine(COLORS.VR, 1.5, (wt) => (VR0 * Math.sin(wt - phi)) / scaleV);
+            
+            // コイル電圧 VL (オレンジ) : VL = VL0 * sin(ωt - φ + π/2) ※電流より90度進む
+            drawSolidLine(COLORS.VL, 1.5, (wt) => (VL0 * Math.sin(wt - phi + Math.PI/2)) / scaleV);
+            
+            // コンデンサー電圧 VC (紫) : VC = VC0 * sin(ωt - φ - π/2) ※電流より90度遅れる
+            drawSolidLine(COLORS.VC, 1.5, (wt) => (VC0 * Math.sin(wt - phi - Math.PI/2)) / scaleV);
+            
+            // 電流 I (青・太線) : I = I0 * sin(ωt - φ)
+            drawSolidLine(COLORS.I, 4, (wt) => (I0 * Math.sin(wt - phi)) * scaleI);
         }
 
         // 2. ベクトル図ロジック
@@ -173,23 +188,20 @@
             ctx.strokeStyle = COLORS.Grid;
             ctx.stroke();
 
-            // 描画スケールの調整（VR0, VL0, VC0の最大値に合わせる）
+            // 描画スケールの調整
             const maxV = Math.max(VR0, VL0, VC0, V0, 1);
             const scale = (cX - 20) / maxV;
-
-            // 電流 I を基準（右向き）にする
             const vecI0 = 60; // 電流ベクトルの描画長（固定）
             
-            // ベクトルの描画
+            // ベクトルの描画 (電流Iを基準・右向き)
             drawArrow(ctx, cX, cY, cX + vecI0, cY, COLORS.I, 4);          // I (基準)
-            drawArrow(ctx, cX, cY, cX + VR0 * scale, cY, COLORS.VR, 2);   // VR (Iと同位相)
-            drawArrow(ctx, cX, cY, cX, cY - VL0 * scale, COLORS.VL, 2);   // VL (Iより90度進む)
-            drawArrow(ctx, cX, cY, cX, cY + VC0 * scale, COLORS.VC, 2);   // VC (Iより90度遅れる)
+            drawArrow(ctx, cX, cY, cX + VR0 * scale, cY, COLORS.VR, 2);   // VR
+            drawArrow(ctx, cX, cY, cX, cY - VL0 * scale, COLORS.VL, 2);   // VL
+            drawArrow(ctx, cX, cY, cX, cY + VC0 * scale, COLORS.VC, 2);   // VC
             
-            // 全体電圧 V (Iよりφ進む。φが負なら遅れる)
-            // atan2(X,R)で求めたφは「Vに対するIの遅れ」なので、I基準ならVの位相は +φ
+            // 全体電圧 V
             const Vx = V0 * Math.cos(phi) * scale;
-            const Vy = -V0 * Math.sin(phi) * scale; // CanvasはY軸下向きが正のため符号反転
+            const Vy = -V0 * Math.sin(phi) * scale;
             drawArrow(ctx, cX, cY, cX + Vx, cY + Vy, COLORS.V, 3);        // V
 
             // ラベル
@@ -212,11 +224,6 @@
             ctx.beginPath();
             ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY);
             ctx.strokeStyle = COLORS.Axis; ctx.lineWidth = 1; ctx.stroke();
-        }
-
-        function drawPoint(ctx, x, y, color, size) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, size, size);
         }
 
         function drawArrow(ctx, x1, y1, x2, y2, color, width) {
