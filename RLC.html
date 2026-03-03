@@ -64,6 +64,10 @@
                 <label>角周波数 ω (rad/s):</label>
                 <input type="range" id="w" min="50" max="1500" value="258" oninput="draw()">
                 <span id="w_val" class="val-display">258</span>
+
+                <label>横軸スケール (時間):</label>
+                <input type="range" id="timeScale" min="0.2" max="3.0" step="0.1" value="1.0" oninput="draw()">
+                <span id="timeScale_val" class="val-display">1.0x</span>
             </div>
         </div>
 
@@ -76,7 +80,7 @@
         const vectorCanvas = document.getElementById('vectorCanvas');
         const vCtx = vectorCanvas.getContext('2d');
 
-        // 色の定義（凡例と完全一致）
+        // 色の定義
         const COLORS = {
             I: '#4da6ff', V: '#ff4d4d', VR: '#33cc33', VL: '#ff9933', VC: '#cc66ff',
             Grid: '#444', Axis: '#888', Text: '#eee'
@@ -88,23 +92,25 @@
             const L = parseFloat(document.getElementById('L').value) * 1e-3;
             const C = parseFloat(document.getElementById('C').value) * 1e-6;
             const w = parseFloat(document.getElementById('w').value);
+            const timeScale = parseFloat(document.getElementById('timeScale').value); // 横軸スケールの取得
 
             // 表示更新
             document.getElementById('R_val').innerText = R;
             document.getElementById('L_val').innerText = document.getElementById('L').value;
             document.getElementById('C_val').innerText = document.getElementById('C').value;
             document.getElementById('w_val').innerText = w;
+            document.getElementById('timeScale_val').innerText = timeScale.toFixed(1) + 'x'; // 少数第1位まで表示
 
             // 物理計算
             const XL = w * L;                  
             const XC = 1 / (w * C);            
-            const X = XL - XC;                 // 合成リアクタンス
-            const Z = Math.sqrt(R*R + X*X);    // インピーダンス
-            const phi = Math.atan2(X, R);      // 電圧に対する電流の位相差（遅れ）
+            const X = XL - XC;                 
+            const Z = Math.sqrt(R*R + X*X);    
+            const phi = Math.atan2(X, R);      
             
-            const w0 = 1 / Math.sqrt(L * C);   // 共振角周波数
-            const V0 = 100;                    // 全体電圧の最大値（固定）
-            const I0 = V0 / Z;                 // 電流の最大値
+            const w0 = 1 / Math.sqrt(L * C);   
+            const V0 = 100;                    
+            const I0 = V0 / Z;                 
 
             // 各要素の電圧最大値
             const VR0 = R * I0;
@@ -121,30 +127,31 @@
                 `位相差 φ = ${phaseStr}<br>` +
                 `角周波数 ω = ${w.toFixed(0)} rad/s / 共振角周波数 ω₀ = ${w0.toFixed(0)} rad/s`;
 
-            // --- 描画実行 ---
-            drawWaveforms(wCtx, waveCanvas, w, phi, I0, V0, VR0, VL0, VC0);
+            // 描画実行（timeScaleを渡す）
+            drawWaveforms(wCtx, waveCanvas, w, phi, I0, V0, VR0, VL0, VC0, timeScale);
             drawVectorDiagram(vCtx, vectorCanvas, phi, I0, V0, VR0, VL0, VC0);
         }
 
-        // 1. 波形グラフロジック（実線・固定版）
-        function drawWaveforms(ctx, canvas, w, phi, I0, V0, VR0, VL0, VC0) {
+        // 1. 波形グラフロジック
+        function drawWaveforms(ctx, canvas, w, phi, I0, V0, VR0, VL0, VC0, timeScale) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGraphBase(ctx, canvas); // グリッド描画
+            drawGraphBase(ctx, canvas);
 
             const centerY = canvas.height / 2;
-            const scaleV = 1.2; // 電圧の描画スケール
-            const scaleI = 80;  // 電流の描画スケール
+            const scaleV = 1.2; 
+            const scaleI = 80;  
 
-            // 波形を描画する共通関数（実線）
+            // 波形を描画する共通関数
             function drawSolidLine(color, lineWidth, calcYFunction) {
                 ctx.beginPath();
                 ctx.strokeStyle = color;
                 ctx.lineWidth = lineWidth;
-                ctx.lineJoin = 'round'; // 線のつなぎ目を滑らかに
+                ctx.lineJoin = 'round'; 
 
                 for(let x = 0; x <= canvas.width; x++) {
-                    const t = x * 0.0001; // 時間軸（固定）
-                    const phase_wt = w * t * 20; // 描画用に周波数を調整
+                    // timeScaleを掛けることで、時間の進み方（横軸のスケール）を調整
+                    const t = x * 0.0001 * timeScale; 
+                    const phase_wt = w * t * 20; 
                     const y = centerY - calcYFunction(phase_wt);
                     
                     if (x === 0) {
@@ -156,21 +163,11 @@
                 ctx.stroke();
             }
 
-            // 各波形を実線で描画（凡例の色と一致）
-            
-            // 全体電圧 V (赤) : V = V0 * sin(ωt)
+            // 各波形を描画
             drawSolidLine(COLORS.V, 1.5, (wt) => (V0 * Math.sin(wt)) / scaleV);
-            
-            // 抵抗電圧 VR (緑) : VR = VR0 * sin(ωt - φ)  ※電流と同位相
             drawSolidLine(COLORS.VR, 1.5, (wt) => (VR0 * Math.sin(wt - phi)) / scaleV);
-            
-            // コイル電圧 VL (オレンジ) : VL = VL0 * sin(ωt - φ + π/2) ※電流より90度進む
             drawSolidLine(COLORS.VL, 1.5, (wt) => (VL0 * Math.sin(wt - phi + Math.PI/2)) / scaleV);
-            
-            // コンデンサー電圧 VC (紫) : VC = VC0 * sin(ωt - φ - π/2) ※電流より90度遅れる
             drawSolidLine(COLORS.VC, 1.5, (wt) => (VC0 * Math.sin(wt - phi - Math.PI/2)) / scaleV);
-            
-            // 電流 I (青・太線) : I = I0 * sin(ωt - φ)
             drawSolidLine(COLORS.I, 4, (wt) => (I0 * Math.sin(wt - phi)) * scaleI);
         }
 
@@ -181,30 +178,25 @@
             const cX = canvas.width / 2;
             const cY = canvas.height / 2;
 
-            // 軸の描画
             ctx.beginPath();
             ctx.moveTo(0, cY); ctx.lineTo(canvas.width, cY);
             ctx.moveTo(cX, 0); ctx.lineTo(cX, canvas.height);
             ctx.strokeStyle = COLORS.Grid;
             ctx.stroke();
 
-            // 描画スケールの調整
             const maxV = Math.max(VR0, VL0, VC0, V0, 1);
             const scale = (cX - 20) / maxV;
-            const vecI0 = 60; // 電流ベクトルの描画長（固定）
+            const vecI0 = 60; 
             
-            // ベクトルの描画 (電流Iを基準・右向き)
-            drawArrow(ctx, cX, cY, cX + vecI0, cY, COLORS.I, 4);          // I (基準)
-            drawArrow(ctx, cX, cY, cX + VR0 * scale, cY, COLORS.VR, 2);   // VR
-            drawArrow(ctx, cX, cY, cX, cY - VL0 * scale, COLORS.VL, 2);   // VL
-            drawArrow(ctx, cX, cY, cX, cY + VC0 * scale, COLORS.VC, 2);   // VC
+            drawArrow(ctx, cX, cY, cX + vecI0, cY, COLORS.I, 4);          
+            drawArrow(ctx, cX, cY, cX + VR0 * scale, cY, COLORS.VR, 2);   
+            drawArrow(ctx, cX, cY, cX, cY - VL0 * scale, COLORS.VL, 2);   
+            drawArrow(ctx, cX, cY, cX, cY + VC0 * scale, COLORS.VC, 2);   
             
-            // 全体電圧 V
             const Vx = V0 * Math.cos(phi) * scale;
             const Vy = -V0 * Math.sin(phi) * scale;
-            drawArrow(ctx, cX, cY, cX + Vx, cY + Vy, COLORS.V, 3);        // V
+            drawArrow(ctx, cX, cY, cX + Vx, cY + Vy, COLORS.V, 3);        
 
-            // ラベル
             ctx.fillStyle = COLORS.Text; ctx.font = '14px monospace';
             ctx.fillText('I', cX + vecI0 + 5, cY - 5);
             ctx.fillText('VR', cX + VR0 * scale - 20, cY + 15);
@@ -213,7 +205,6 @@
             ctx.fillStyle = COLORS.V; ctx.fillText('V', cX + Vx + 5, cY + Vy - 5);
         }
 
-        // --- 描画補助関数 ---
         function drawGraphBase(ctx, canvas) {
             const centerY = canvas.height / 2;
             ctx.beginPath();
