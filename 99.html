@@ -17,9 +17,10 @@
             border-radius: 20px;
             padding: 30px 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            max-width: 500px;
+            max-width: 550px;
             margin: 0 auto;
             border: 4px solid #ffb347;
+            position: relative; /* ヒントボタンの配置用 */
         }
         h1 {
             color: #ff8c00;
@@ -80,14 +81,13 @@
             margin: 10px 0;
             color: #4a90e2;
         }
-        /* 図解（絵文字）を表示するエリアのデザイン */
         .visualizer {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
             margin: 0 auto 20px auto;
-            min-height: 50px; /* 高さが変わって画面がガタガタするのを防ぐ */
+            min-height: 50px;
         }
         .emoji-group {
             background-color: #f0f8ff;
@@ -146,6 +146,88 @@
             padding-top: 15px;
             border-top: 2px dashed #eee;
         }
+
+        /* ----- ヒントボタンとモーダル（ポップアップ）のデザイン ----- */
+        .hint-btn {
+            background-color: #fff;
+            color: #4a90e2;
+            border: 2px solid #4a90e2;
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+        .hint-btn:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .modal-overlay {
+            display: none; /* 初期状態は隠す */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
+        }
+        .modal-content {
+            background-color: #fff9e6;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh; /* 画面に収まらない時はスクロール */
+            overflow-y: auto;
+            border: 4px solid #4a90e2;
+            position: relative;
+        }
+        .close-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        .cheat-sheet {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .cheat-col {
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 120px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .cheat-col h3 {
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 2px dashed #ccc;
+            font-size: 18px;
+            color: white;
+            border-radius: 5px;
+        }
+        .cheat-row {
+            font-size: 18px;
+            margin: 5px 0;
+            font-weight: bold;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +254,8 @@
                 </select>
             </div>
         </div>
+
+        <button class="hint-btn" onclick="openHint()">💡 ヒントのひょうを見る</button>
         
         <div class="question" id="question">1 × 1 ＝</div>
         
@@ -186,14 +270,57 @@
         <div class="score" id="score">いまのスコア: 0 てん</div>
     </div>
 
+    <div id="hint-modal" class="modal-overlay" onclick="closeHint(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeHint()">✖ とじる</button>
+            <h2 style="color: #4a90e2; margin-top: 0;">📖 九九のひょう</h2>
+            <div class="cheat-sheet" id="cheat-sheet-container">
+                </div>
+        </div>
+    </div>
+
     <script>
         let num1, num2;
         let score = 0;
         let isSequentialMode = true;
         let currentMultiplier = 1;
 
-        // 段ごとに違う絵文字が出るように設定
         const emojis = ["🍎", "🍊", "🍓", "🍉", "⭐", "🎈", "🍬", "🐥", "🚗"];
+        // ヒント表の各段の色
+        const tableColors = ["#f39c12", "#e74c3c", "#2ecc71", "#3498db", "#9b59b6", "#f1c40f", "#1abc9c", "#e67e22", "#34495e"];
+
+        // アプリ起動時にヒント表（チートシート）を自動で作成する
+        function generateCheatSheet() {
+            const container = document.getElementById("cheat-sheet-container");
+            for (let i = 1; i <= 9; i++) {
+                let col = document.createElement("div");
+                col.className = "cheat-col";
+                
+                // 見出し（色付き）
+                let header = document.createElement("h3");
+                header.innerText = `${i}のだん`;
+                header.style.backgroundColor = tableColors[i-1];
+                col.appendChild(header);
+
+                // 1〜10までの掛け算を入れる
+                for (let j = 1; j <= 10; j++) {
+                    let row = document.createElement("div");
+                    row.className = "cheat-row";
+                    row.innerText = `${i} × ${j} = ${i * j}`;
+                    col.appendChild(row);
+                }
+                container.appendChild(col);
+            }
+        }
+
+        // ヒント画面を開く・閉じる関数
+        function openHint() {
+            document.getElementById("hint-modal").style.display = "block";
+        }
+        function closeHint(e) {
+            document.getElementById("hint-modal").style.display = "none";
+            document.getElementById("answer").focus(); // 閉じたらすぐに入力できるようにする
+        }
 
         function setMode(mode) {
             isSequentialMode = (mode === 'sequential');
@@ -217,21 +344,16 @@
 
         function drawVisuals(n1, n2) {
             const visualizer = document.getElementById("visualizer");
-            visualizer.innerHTML = ""; // 前の絵を消す
-            
-            // 段（n1）に対応する絵文字を選ぶ
+            visualizer.innerHTML = ""; 
             const emoji = emojis[n1 - 1]; 
 
-            // 「n1(1つ分の数)」が「n2(いくつ分)」あるという図を作る
             for(let i = 0; i < n2; i++) {
                 const groupDiv = document.createElement("div");
                 groupDiv.className = "emoji-group";
-                
                 let groupHtml = "";
                 for(let j = 0; j < n1; j++) {
                     groupHtml += emoji;
                 }
-                
                 groupDiv.innerHTML = groupHtml;
                 visualizer.appendChild(groupDiv);
             }
@@ -251,9 +373,7 @@
             document.getElementById("answer").value = "";
             document.getElementById("feedback").innerText = "";
             
-            // 図解を描画
             drawVisuals(num1, num2);
-            
             document.getElementById("answer").focus();
         }
 
@@ -282,7 +402,7 @@
                         document.getElementById("question").innerText = "おめでとう！";
                         document.getElementById("answer").style.display = "none";
                         document.getElementById("submit-btn").style.display = "none";
-                        document.getElementById("visualizer").style.display = "none"; // 絵文字も隠す
+                        document.getElementById("visualizer").style.display = "none";
                         return;
                     }
                 }
@@ -305,6 +425,8 @@
             }
         });
 
+        // アプリ起動時の初期設定
+        generateCheatSheet(); // ヒント表を作っておく
         setMode('sequential');
     </script>
 
