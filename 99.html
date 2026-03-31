@@ -9,28 +9,29 @@
             font-family: 'Hiragino Maru Gothic ProN', 'Meiryo', 'Comic Sans MS', sans-serif;
             background-color: #fff9e6;
             text-align: center;
-            padding: 30px 10px;
+            padding: 20px 10px;
             color: #333;
+            touch-action: manipulation; 
         }
         .container {
             background-color: #ffffff;
             border-radius: 20px;
-            padding: 30px 20px;
+            padding: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
             max-width: 550px;
             margin: 0 auto;
             border: 4px solid #ffb347;
-            position: relative; /* ヒントボタンの配置用 */
+            position: relative;
         }
         h1 {
             color: #ff8c00;
             font-size: 24px;
             margin-top: 0;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .controls {
             background-color: #fff3e0;
-            padding: 15px;
+            padding: 10px;
             border-radius: 15px;
             margin-bottom: 15px;
             display: flex;
@@ -73,10 +74,21 @@
             border-color: #ccc;
             background-color: #eee;
             color: #999;
-            cursor: not-allowed;
+        }
+        .hint-btn {
+            background-color: #fff;
+            color: #4a90e2;
+            border: 2px solid #4a90e2;
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
         }
         .question {
-            font-size: 50px;
+            font-size: 48px;
             font-weight: bold;
             margin: 10px 0;
             color: #4a90e2;
@@ -86,8 +98,8 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
-            margin: 0 auto 20px auto;
-            min-height: 50px;
+            margin: 0 auto 15px auto;
+            min-height: 40px;
         }
         .emoji-group {
             background-color: #f0f8ff;
@@ -96,38 +108,67 @@
             padding: 4px 8px;
             display: flex;
             gap: 2px;
-            font-size: 20px;
+            font-size: 18px;
         }
-        input[type="number"] {
-            font-size: 36px;
-            width: 120px;
+        
+        /* 答えの入力欄（onfocus="this.blur()" でキーボードを確実に出さない） */
+        input[type="text"] {
+            font-size: 40px;
+            width: 150px;
             text-align: center;
             padding: 10px;
             border: 3px solid #ddd;
             border-radius: 15px;
             margin-bottom: 15px;
             outline: none;
-            transition: border-color 0.3s;
+            background-color: #fafafa;
+            color: #333;
+            font-weight: bold;
         }
-        input[type="number"]:focus {
-            border-color: #ffb347;
+
+        /* テンキーのデザイン */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 0 auto 15px auto;
         }
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
+        .key-btn {
+            background-color: #fff;
+            border: 2px solid #ccc;
+            border-radius: 15px;
+            padding: 15px 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #bbb;
+            user-select: none; 
+            -webkit-user-select: none;
         }
+        .key-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+            background-color: #f0f0f0;
+        }
+        .key-action {
+            background-color: #eee;
+            color: #e74c3c;
+        }
+
         .answer-btn {
             background-color: #ff8c00;
             color: white;
             border: none;
-            padding: 12px 35px;
-            font-size: 22px;
+            padding: 15px 40px;
+            font-size: 24px;
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
             box-shadow: 0 5px 0 #cc7000;
-            transition: all 0.1s;
+            width: 100%;
+            max-width: 300px;
         }
         .answer-btn:active {
             transform: translateY(5px);
@@ -142,37 +183,21 @@
         .score {
             font-size: 18px;
             color: #666;
-            margin-top: 15px;
-            padding-top: 15px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 2px dashed #eee;
         }
 
-        /* ----- ヒントボタンとモーダル（ポップアップ）のデザイン ----- */
-        .hint-btn {
-            background-color: #fff;
-            color: #4a90e2;
-            border: 2px solid #4a90e2;
-            padding: 8px 15px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 20px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: all 0.2s;
-        }
-        .hint-btn:hover {
-            background-color: #f0f8ff;
-        }
-        
+        /* モーダルのデザイン */
         .modal-overlay {
-            display: none; /* 初期状態は隠す */
+            display: none;
             position: fixed;
             z-index: 100;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
+            background-color: rgba(0, 0, 0, 0.5);
         }
         .modal-content {
             background-color: #fff9e6;
@@ -181,7 +206,7 @@
             border-radius: 20px;
             width: 90%;
             max-width: 800px;
-            max-height: 80vh; /* 画面に収まらない時はスクロール */
+            max-height: 80vh;
             overflow-y: auto;
             border: 4px solid #4a90e2;
             position: relative;
@@ -237,8 +262,8 @@
         
         <div class="controls">
             <div class="mode-buttons">
-                <button class="mode-btn active" id="btn-seq" onclick="setMode('sequential')">じゅんばん</button>
-                <button class="mode-btn" id="btn-rand" onclick="setMode('random')">ランダム</button>
+                <button type="button" class="mode-btn active" id="btn-seq" onclick="setMode('sequential')">じゅんばん</button>
+                <button type="button" class="mode-btn" id="btn-rand" onclick="setMode('random')">ランダム</button>
             </div>
             <div>
                 <select id="table-select" onchange="startSelectedTable()">
@@ -255,179 +280,233 @@
             </div>
         </div>
 
-        <button class="hint-btn" onclick="openHint()">💡 ヒントのひょうを見る</button>
+        <button type="button" class="hint-btn" onclick="openHint()">💡 ヒントのひょうを見る</button>
         
         <div class="question" id="question">1 × 1 ＝</div>
-        
         <div class="visualizer" id="visualizer"></div>
         
-        <input type="number" id="answer" placeholder="?" autocomplete="off">
-        <br>
-        <button class="answer-btn" id="submit-btn" onclick="checkAnswer()">こたえる！</button>
+        <input type="text" id="answer" placeholder="?" readonly onfocus="this.blur()">
+        
+        <div class="keypad" id="keypad">
+            <button type="button" class="key-btn" onclick="inputNum('1')">1</button>
+            <button type="button" class="key-btn" onclick="inputNum('2')">2</button>
+            <button type="button" class="key-btn" onclick="inputNum('3')">3</button>
+            <button type="button" class="key-btn" onclick="inputNum('4')">4</button>
+            <button type="button" class="key-btn" onclick="inputNum('5')">5</button>
+            <button type="button" class="key-btn" onclick="inputNum('6')">6</button>
+            <button type="button" class="key-btn" onclick="inputNum('7')">7</button>
+            <button type="button" class="key-btn" onclick="inputNum('8')">8</button>
+            <button type="button" class="key-btn" onclick="inputNum('9')">9</button>
+            <button type="button" class="key-btn key-action" onclick="clearNum()">C</button>
+            <button type="button" class="key-btn" onclick="inputNum('0')">0</button>
+            <button type="button" class="key-btn key-action" onclick="deleteNum()">⌫</button>
+        </div>
+
+        <button type="button" class="answer-btn" id="submit-btn" onclick="checkAnswer()">こたえる！</button>
         
         <div class="feedback" id="feedback"></div>
-        
         <div class="score" id="score">いまのスコア: 0 てん</div>
     </div>
 
-    <div id="hint-modal" class="modal-overlay" onclick="closeHint(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-btn" onclick="closeHint()">✖ とじる</button>
+    <div id="hint-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button type="button" class="close-btn" onclick="closeHint()">✖ とじる</button>
             <h2 style="color: #4a90e2; margin-top: 0;">📖 九九のひょう</h2>
-            <div class="cheat-sheet" id="cheat-sheet-container">
-                </div>
+            <div class="cheat-sheet" id="cheat-sheet-container"></div>
         </div>
     </div>
 
     <script>
-        let num1, num2;
-        let score = 0;
-        let isSequentialMode = true;
-        let currentMultiplier = 1;
-
-        const emojis = ["🍎", "🍊", "🍓", "🍉", "⭐", "🎈", "🍬", "🐥", "🚗"];
-        // ヒント表の各段の色
-        const tableColors = ["#f39c12", "#e74c3c", "#2ecc71", "#3498db", "#9b59b6", "#f1c40f", "#1abc9c", "#e67e22", "#34495e"];
-
-        // アプリ起動時にヒント表（チートシート）を自動で作成する
-        function generateCheatSheet() {
-            const container = document.getElementById("cheat-sheet-container");
-            for (let i = 1; i <= 9; i++) {
-                let col = document.createElement("div");
-                col.className = "cheat-col";
-                
-                // 見出し（色付き）
-                let header = document.createElement("h3");
-                header.innerText = `${i}のだん`;
-                header.style.backgroundColor = tableColors[i-1];
-                col.appendChild(header);
-
-                // 1〜10までの掛け算を入れる
-                for (let j = 1; j <= 10; j++) {
-                    let row = document.createElement("div");
-                    row.className = "cheat-row";
-                    row.innerText = `${i} × ${j} = ${i * j}`;
-                    col.appendChild(row);
-                }
-                container.appendChild(col);
-            }
-        }
-
-        // ヒント画面を開く・閉じる関数
-        function openHint() {
-            document.getElementById("hint-modal").style.display = "block";
-        }
-        function closeHint(e) {
-            document.getElementById("hint-modal").style.display = "none";
-            document.getElementById("answer").focus(); // 閉じたらすぐに入力できるようにする
-        }
-
-        function setMode(mode) {
-            isSequentialMode = (mode === 'sequential');
-            document.getElementById("btn-seq").classList.toggle("active", isSequentialMode);
-            document.getElementById("btn-rand").classList.toggle("active", !isSequentialMode);
-            document.getElementById("table-select").disabled = !isSequentialMode;
-            startSelectedTable();
-        }
-
-        function startSelectedTable() {
-            score = 0;
-            currentMultiplier = 1;
-            updateScoreDisplay();
+        // エラー防止のため、ページが完全に読み込まれてから作動するように変更
+        window.addEventListener('DOMContentLoaded', function() {
             
-            document.getElementById("answer").style.display = "inline-block";
-            document.getElementById("submit-btn").style.display = "inline-block";
-            document.getElementById("visualizer").style.display = "flex";
-            document.getElementById("feedback").innerText = "";
-            nextQuestion();
-        }
+            let num1, num2;
+            let score = 0;
+            let isSequentialMode = true;
+            let currentMultiplier = 1;
+            let isCleared = false;
 
-        function drawVisuals(n1, n2) {
-            const visualizer = document.getElementById("visualizer");
-            visualizer.innerHTML = ""; 
-            const emoji = emojis[n1 - 1]; 
+            const emojis = ["🍎", "🍊", "🍓", "🍉", "⭐", "🎈", "🍬", "🐥", "🚗"];
+            const tableColors = ["#f39c12", "#e74c3c", "#2ecc71", "#3498db", "#9b59b6", "#f1c40f", "#1abc9c", "#e67e22", "#34495e"];
 
-            for(let i = 0; i < n2; i++) {
-                const groupDiv = document.createElement("div");
-                groupDiv.className = "emoji-group";
-                let groupHtml = "";
-                for(let j = 0; j < n1; j++) {
-                    groupHtml += emoji;
+            // --- テンキー機能 ---
+            window.inputNum = function(n) {
+                const ansInput = document.getElementById("answer");
+                if (ansInput.value.length < 3) {
+                    ansInput.value += n;
                 }
-                groupDiv.innerHTML = groupHtml;
-                visualizer.appendChild(groupDiv);
-            }
-        }
+            };
 
-        function nextQuestion() {
-            if (isSequentialMode) {
-                const selectedTable = document.getElementById("table-select").value;
-                num1 = parseInt(selectedTable, 10);
-                num2 = currentMultiplier;
-            } else {
-                num1 = Math.floor(Math.random() * 9) + 1;
-                num2 = Math.floor(Math.random() * 10) + 1;
-            }
-            
-            document.getElementById("question").innerText = `${num1} × ${num2} ＝`;
-            document.getElementById("answer").value = "";
-            document.getElementById("feedback").innerText = "";
-            
-            drawVisuals(num1, num2);
-            document.getElementById("answer").focus();
-        }
+            window.deleteNum = function() {
+                const ansInput = document.getElementById("answer");
+                ansInput.value = ansInput.value.slice(0, -1);
+            };
 
-        function checkAnswer() {
-            const answerInput = document.getElementById("answer").value;
-            const userAnswer = parseInt(answerInput, 10);
-            const feedbackEl = document.getElementById("feedback");
-
-            if (answerInput === "" || isNaN(userAnswer)) {
-                feedbackEl.innerText = "すうじを いれてね！";
-                feedbackEl.style.color = "#ff8c00";
-                return;
-            }
-
-            if (userAnswer === num1 * num2) {
-                score += 10;
-                updateScoreDisplay();
-                feedbackEl.innerText = "💮 大せいかい！";
-                feedbackEl.style.color = "#4CAF50";
-                
-                if (isSequentialMode) {
-                    currentMultiplier++;
-                    if (currentMultiplier > 10) {
-                        feedbackEl.innerText = `🎉 ${num1}のだん クリア！ 🎉`;
-                        feedbackEl.style.color = "#e91e63";
-                        document.getElementById("question").innerText = "おめでとう！";
-                        document.getElementById("answer").style.display = "none";
-                        document.getElementById("submit-btn").style.display = "none";
-                        document.getElementById("visualizer").style.display = "none";
-                        return;
-                    }
-                }
-                setTimeout(nextQuestion, 800); 
-            } else {
-                feedbackEl.innerText = "💦 おしい！もういちど！";
-                feedbackEl.style.color = "#e74c3c";
+            window.clearNum = function() {
                 document.getElementById("answer").value = "";
-                document.getElementById("answer").focus();
-            }
-        }
+            };
 
-        function updateScoreDisplay() {
-            document.getElementById("score").innerText = `いまのスコア: ${score} てん`;
-        }
-
-        document.getElementById("answer").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkAnswer();
+            // --- ヒント機能 ---
+            function generateCheatSheet() {
+                const container = document.getElementById("cheat-sheet-container");
+                container.innerHTML = ""; // 念のため中身をリセット
+                for (let i = 1; i <= 9; i++) {
+                    let col = document.createElement("div");
+                    col.className = "cheat-col";
+                    let header = document.createElement("h3");
+                    header.innerText = i + "のだん";
+                    header.style.backgroundColor = tableColors[i-1];
+                    col.appendChild(header);
+                    for (let j = 1; j <= 10; j++) {
+                        let row = document.createElement("div");
+                        row.className = "cheat-row";
+                        row.innerText = i + " × " + j + " = " + (i * j);
+                        col.appendChild(row);
+                    }
+                    container.appendChild(col);
+                }
             }
+
+            window.openHint = function() {
+                document.getElementById("hint-modal").style.display = "block";
+            };
+
+            window.closeHint = function() {
+                document.getElementById("hint-modal").style.display = "none";
+            };
+
+            // ヒントの黒い背景部分をタップしても閉じられるようにする
+            document.getElementById("hint-modal").addEventListener("click", function(e) {
+                if (e.target.id === "hint-modal") {
+                    window.closeHint();
+                }
+            });
+
+            // --- 問題出題機能 ---
+            window.setMode = function(mode) {
+                isSequentialMode = (mode === 'sequential');
+                document.getElementById("btn-seq").classList.toggle("active", isSequentialMode);
+                document.getElementById("btn-rand").classList.toggle("active", !isSequentialMode);
+                document.getElementById("table-select").disabled = !isSequentialMode;
+                window.startSelectedTable();
+            };
+
+            window.startSelectedTable = function() {
+                isCleared = false;
+                score = 0;
+                currentMultiplier = 1;
+                updateScoreDisplay();
+                
+                document.getElementById("answer").style.display = "inline-block";
+                document.getElementById("keypad").style.display = "grid";
+                document.getElementById("submit-btn").style.display = "inline-block";
+                document.getElementById("visualizer").style.display = "flex";
+                document.getElementById("feedback").innerText = "";
+                nextQuestion();
+            };
+
+            function drawVisuals(n1, n2) {
+                const visualizer = document.getElementById("visualizer");
+                visualizer.innerHTML = ""; 
+                const emoji = emojis[n1 - 1]; 
+                for(let i = 0; i < n2; i++) {
+                    const groupDiv = document.createElement("div");
+                    groupDiv.className = "emoji-group";
+                    let groupHtml = "";
+                    for(let j = 0; j < n1; j++) {
+                        groupHtml += emoji;
+                    }
+                    groupDiv.innerHTML = groupHtml;
+                    visualizer.appendChild(groupDiv);
+                }
+            }
+
+            function nextQuestion() {
+                if (isCleared) return;
+
+                if (isSequentialMode) {
+                    const selectedTable = document.getElementById("table-select").value;
+                    num1 = parseInt(selectedTable, 10);
+                    num2 = currentMultiplier;
+                } else {
+                    num1 = Math.floor(Math.random() * 9) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                }
+                
+                document.getElementById("question").innerText = num1 + " × " + num2 + " ＝";
+                window.clearNum();
+                document.getElementById("feedback").innerText = "";
+                
+                drawVisuals(num1, num2);
+            }
+
+            window.checkAnswer = function() {
+                if (isCleared) return;
+
+                const answerInput = document.getElementById("answer").value;
+                const userAnswer = parseInt(answerInput, 10);
+                const feedbackEl = document.getElementById("feedback");
+
+                if (answerInput === "" || isNaN(userAnswer)) {
+                    feedbackEl.innerText = "すうじを いれてね！";
+                    feedbackEl.style.color = "#ff8c00";
+                    return;
+                }
+
+                if (userAnswer === num1 * num2) {
+                    score += 10;
+                    updateScoreDisplay();
+                    feedbackEl.innerText = "💮 大せいかい！";
+                    feedbackEl.style.color = "#4CAF50";
+                    
+                    if (isSequentialMode) {
+                        currentMultiplier++;
+                        if (currentMultiplier > 10) {
+                            isCleared = true;
+                            feedbackEl.innerText = "🎉 " + num1 + "のだん クリア！ 🎉";
+                            feedbackEl.style.color = "#e91e63";
+                            document.getElementById("question").innerText = "おめでとう！";
+                            
+                            document.getElementById("answer").style.display = "none";
+                            document.getElementById("keypad").style.display = "none";
+                            document.getElementById("submit-btn").style.display = "none";
+                            document.getElementById("visualizer").style.display = "none";
+                            return;
+                        }
+                    }
+                    setTimeout(nextQuestion, 800); 
+                } else {
+                    feedbackEl.innerText = "💦 おしい！もういちど！";
+                    feedbackEl.style.color = "#e74c3c";
+                    window.clearNum(); 
+                }
+            }
+
+            function updateScoreDisplay() {
+                document.getElementById("score").innerText = "いまのスコア: " + score + " てん";
+            }
+
+            // パソコンのキーボード対応
+            document.addEventListener("keydown", function(event) {
+                const hintModal = document.getElementById("hint-modal");
+                if(hintModal && hintModal.style.display === "block") return;
+                if(isCleared) return;
+
+                if (event.key >= "0" && event.key <= "9") {
+                    window.inputNum(event.key);
+                } else if (event.key === "Backspace") {
+                    window.deleteNum();
+                } else if (event.key === "Enter") {
+                    window.checkAnswer();
+                } else if (event.key.toLowerCase() === "c" || event.key === "Escape") {
+                    window.clearNum();
+                }
+            });
+
+            // 起動時の準備
+            generateCheatSheet();
+            window.setMode('sequential');
         });
-
-        // アプリ起動時の初期設定
-        generateCheatSheet(); // ヒント表を作っておく
-        setMode('sequential');
     </script>
 
 </body>
